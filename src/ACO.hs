@@ -1,4 +1,4 @@
-module Mravenci (optimize) where
+module ACO (optimize) where
 
 import Control.Applicative
 import Control.Arrow
@@ -10,7 +10,7 @@ import qualified Data.IntSet as Set
 import Data.List
 --import Data.List.Stream
 --import Prelude hiding (map, minimum, splitAt, sum, repeat, tail, take, zip)
-import qualified Two_opt as T
+import qualified TSP.TwoOpt as Topt
 
 type Vertex = Int
 type Path = [Vertex]
@@ -113,7 +113,7 @@ generations n dist = do
 		let newPher = updatePheromones pBestCoef minP bp
 		put (newPher pher, minP)
 
-use2opt dist (_, path) = let newPath = T.optimize dist path in (pathLen dist newPath, newPath)
+use2opt dist (_, path) = let newPath = Topt.optimize dist path in (pathLen dist newPath, newPath)
 
 optimize :: Size -> DArray -> IO (Distance, Path)
 optimize n dist = do

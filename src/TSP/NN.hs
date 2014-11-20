@@ -1,13 +1,13 @@
+module TSP.NN where
+
 import Control.Arrow
-import Data.Maybe
-import Data.List
 --import Data.List.Stream
 --import Prelude hiding ((++), lines, map, minimum, splitAt, sum, repeat, tail, take, words, zip)
 --TODO zrušit explicitní rekurzi a zkusit znovu
 import Data.Array.Unboxed
 import qualified Data.Set as Set
 
-import Two_opt
+import TSP.TwoOpt as Topt
 
 type Vertex = Int
 type Path = [Vertex]
@@ -27,14 +27,14 @@ getDistances n source = listArray ((1, 1), (n, n)) $ take (n * n) (rList source)
 findPath :: Size -> FDist -> Vertex -> Path
 findPath n dist origin = origin : fp dist origin origin (Set.delete origin (Set.fromAscList [1..n]))
 
-fp dist first last unv | not (Set.null unv) = nearest : fp dist first nearest (Set.delete nearest unv)
+fp dist frst lst unv | not (Set.null unv) = nearest : fp dist frst nearest (Set.delete nearest unv)
 	where 	nearest = snd (minimum (map dist' (Set.elems unv)))
-		dist' x = (dist (last, x), x)
-fp dist first last _ = [first]
+		dist' x = (dist (lst, x), x)
+fp _ frst _ _ = [frst]
 
 allPaths :: FDist -> Size -> [Path]
 --allPaths dist n = map (findPath n dist) [1..n]
-allPaths dist n = map (Two_opt.optimize dist . findPath n dist) [1..n]
+allPaths dist n = map (Topt.optimize dist . findPath n dist) [1..n]
 
 pathLen :: FDist -> Path -> Distance
 pathLen dist path = sum . map dist $ zip path (tail path)

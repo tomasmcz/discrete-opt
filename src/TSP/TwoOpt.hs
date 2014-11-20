@@ -1,4 +1,4 @@
-module Two_opt (optimize) where
+module TSP.TwoOpt (optimize) where
 
 type Vertex = Int
 type Pair = Int
