@@ -1,4 +1,6 @@
-import Mravenci
+module Main where
+
+import ACO
 import Data.Array.Unboxed
 --import qualified Data.ByteString.Char8 as B
 --import Data.ByteString.Lex.Double
