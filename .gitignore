@@ -1,1 +1,4 @@
-data
+cabal.sandbox.config
+.cabal-sandbox
+dist
+gh-pages
