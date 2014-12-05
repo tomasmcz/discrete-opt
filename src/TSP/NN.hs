@@ -1,3 +1,13 @@
+{- |
+Copyright    : 2014 Tomáš Musil
+License      : BSD-3
+Stability    : experimental
+Portability  : portable 
+
+Nearest Neighbor heuristic for TSP.
+
+-}
+
 module TSP.NN
  ( optimize
  ) where

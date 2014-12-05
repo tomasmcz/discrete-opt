@@ -1,5 +1,15 @@
 {-# LANGUAGE TemplateHaskell #-}
 
+{- |
+Copyright    : 2014 Tomáš Musil
+License      : BSD-3
+Stability    : experimental
+Portability  : portable 
+
+Simulated Annealing.
+
+-}
+
 module SA 
   ( Score
   , Temp

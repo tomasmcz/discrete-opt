@@ -1,3 +1,13 @@
+{- |
+Copyright    : 2014 Tomáš Musil
+License      : BSD-3
+Stability    : experimental
+Portability  : portable 
+
+Ant Colony Optimization.
+
+-}
+
 module ACO (optimize) where
 
 import Control.Applicative

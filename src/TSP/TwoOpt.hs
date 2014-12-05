@@ -1,3 +1,13 @@
+{- |
+Copyright    : 2014 Tomáš Musil
+License      : BSD-3
+Stability    : experimental
+Portability  : portable 
+
+This module implements the 2-opt heuristic for TSP.
+
+-}
+
 module TSP.TwoOpt (optimize) where
 
 import TSP

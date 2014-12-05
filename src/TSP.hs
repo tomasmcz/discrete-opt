@@ -1,3 +1,13 @@
+{- |
+Copyright    : 2014 Tomáš Musil
+License      : BSD-3
+Stability    : experimental
+Portability  : portable 
+
+Traveling Salesman Problem.
+
+-}
+
 module TSP 
   ( -- * Types
     Size
