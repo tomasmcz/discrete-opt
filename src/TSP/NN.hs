@@ -4,7 +4,7 @@ License      : BSD-3
 Stability    : experimental
 Portability  : portable 
 
-Nearest Neighbor heuristic for TSP.
+Nearest Neighbour heuristic for TSP.
 
 -}
 

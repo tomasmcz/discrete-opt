@@ -5,9 +5,9 @@ module Main where
 import System.Console.GetOpt
 import System.Environment
 
-import MainACO
-import MainNN
-import MainSA
+import Main.ACO
+import Main.NN
+import Main.SA
 
 data Flag = FTwoOpt | FVersion | FHelp
   deriving (Eq)
