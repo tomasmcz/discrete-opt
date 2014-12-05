@@ -1,10 +1,8 @@
 module TSP.TwoOpt (optimize) where
 
-type Vertex = Int
+import TSP
+
 type Pair = Int
-type Path = [Vertex]
-type Distance = Double
-type FDist = ((Vertex, Vertex) -> Distance)
 
 -- TODO: learn quick-check and get this to work
 --pairs :: Path -> [(Vertex, Vertex, Vertex, Vertex)]
