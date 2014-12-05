@@ -38,8 +38,9 @@ executable discrete-opt
   other-modules:       ACO
                      , TSP.NN
                      , TSP.TwoOpt
-                     , MainNN
                      , MainACO
+                     , MainNN
+                     , MainSA
   -- other-extensions:    
   build-depends:       base >=4.7 && <4.8
                      , array >=0.5 && <0.6

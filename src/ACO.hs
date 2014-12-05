@@ -10,19 +10,15 @@ import qualified Data.IntSet as Set
 import Data.List
 --import Data.List.Stream
 --import Prelude hiding (map, minimum, splitAt, sum, repeat, tail, take, zip)
+
+import TSP hiding (CArray)
 import qualified TSP.TwoOpt as Topt
 
-type Vertex = Int
-type Path = [Vertex]
-type Size = Int
-type Distance = Double
 type Probability = Double
 type Pheromon = Double
 type Coefficient = Double
-type DArray = UArray (Vertex, Vertex) Distance
 type PArray = UArray (Vertex, Vertex) Pheromon
 type CArray = UArray (Vertex, Vertex) Coefficient
-type FDist = ((Vertex, Vertex) -> Distance)
 type FPher = ((Vertex, Vertex) -> Pheromon)
 type FCoef = ((Vertex, Vertex) -> Coefficient)
 

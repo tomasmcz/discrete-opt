@@ -4,6 +4,7 @@ module TSP
   , Vertex
   , Path
   , Distance
+  , Coordinate
     -- * Array types
   , CArray
   , DArray

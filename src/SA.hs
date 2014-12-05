@@ -1,14 +1,20 @@
 {-# LANGUAGE TemplateHaskell #-}
 
-module SA (optimize, descent, Config (..)) where
+module SA 
+  ( Score
+  , Temp
+  -- * Configuration
+  , Config (..)
+  -- * Optimization
+  , optimize
+  , descent
+  ) where
 
 import Control.Lens
 import Control.Monad.Random
 import Control.Monad.State
 import Control.Monad.Writer
-import Data.Tuple
-import System.IO
-import System.Random
+import System.Random ()
 
 type Score = Double
 type Prob = Double

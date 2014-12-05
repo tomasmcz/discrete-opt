@@ -7,6 +7,7 @@ import System.Environment
 
 import MainACO
 import MainNN
+import MainSA
 
 data Flag = FTwoOpt | FVersion | FHelp
   deriving (Eq)
@@ -15,7 +16,7 @@ options :: [OptDescr Flag]
 options =
   [ Option "t" ["two-opt"] (NoArg FTwoOpt) "use 2-opt"
   , Option ['v','?'] ["version"] (NoArg FVersion) "show version number"
-  , Option ['h'] ["help"] (NoArg FVersion) "display this usage info"
+  , Option ['h'] ["help"] (NoArg FHelp) "display this usage info"
   ]
 
 getOpts :: [String] -> IO ([Flag], [String])
@@ -33,6 +34,8 @@ main = do
 
 run :: [Flag] -> [String] -> IO ()
 run ((FHelp `elem`) -> True) _ = putStrLn $ usageInfo header options
+run ((FVersion `elem`) -> True) _ = putStrLn $ "0.1.0.0"
 run opts ["aco", file] = mainACO opts file
 run opts ["nn", file] = mainNN opts file
+run opts ["sa", file] = mainSA opts file
 run _ _ = putStrLn $ usageInfo header options
