@@ -24,13 +24,9 @@ makeChange a c path = take a path ++ reverse (take (c - a) (drop a path)) ++ dro
 saConfig :: SA.Config
 saConfig = SA.Config 300000 0.99 100 7 10
 
-mainSA :: a -> b -> IO ()
-mainSA _ _ = do
-	nLine <- getLine
-	let n = read nLine :: Size
-	--dLines <- B.getContents
-	dLines <- getContents
-	let distf = distC (storeCoords n dLines)
+mainSA :: a -> FilePath -> IO ()
+mainSA _ file = do
+	(n, distf) <- readProblemFunction file
 	(minPath1, _) <- evalRandIO $ SA.optimize
                       saConfig
                       (neighbours distf n)

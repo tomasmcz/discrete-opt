@@ -20,14 +20,13 @@ module TSP
   , DArray
   , FDist
     -- * Data manipulation
-  , getDistances
-  , distF2dist
-  , readMatrix
-  , distC
-  , storeCoords
+  , readProblemMatrix
+  , readProblemFunction
   ) where
 
+import Control.Applicative
 import Data.Array.Unboxed
+import System.IO
 
 type Vertex = Int
 type Path = [Vertex]
@@ -38,6 +37,14 @@ type DArray = UArray (Vertex, Vertex) Distance
 type CArray = UArray Vertex Coordinate
 type FDist = ((Vertex, Vertex) -> Distance)
 
+readProblemMatrix :: FilePath -> IO (Size, DArray)
+readProblemMatrix filePath = (\(n, distf) -> (n, distF2dist n distf)) <$> readProblemFunction filePath  
+
+readProblemFunction :: FilePath -> IO (Size, FDist)
+readProblemFunction filePath = withFile filePath ReadMode $ \ file -> do
+  n <- read <$> hGetLine file
+  distf <- distC . storeCoords n <$> hGetContents file
+  distf (n, n) `seq` return (n, distf)
 
 storeCoords :: Size -> String -> (CArray, CArray)
 storeCoords n s = (listArray (1, n) $ map fst lst, listArray (1, n) $ map snd lst)

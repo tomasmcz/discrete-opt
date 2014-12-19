@@ -3,14 +3,9 @@ module Main.NN where
 import TSP
 import TSP.NN
 
-import Data.Array.Unboxed
-
-mainNN :: a -> b -> IO ()
-mainNN _ _ = do
-	nLine <- getLine
-	let n = read nLine :: Size
-	fLines <- getContents
-	let dist = distC (storeCoords n fLines)
+mainNN :: a -> FilePath -> IO ()
+mainNN _ file = do
+        (n, dist) <- readProblemFunction file
 --	let dist = (!) (getDistances n fLines)
 	let path = optimize dist n
 --	let paths = map (findPath n dist) [1..n]
