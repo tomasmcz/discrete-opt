@@ -9,9 +9,15 @@ Ant Colony Optimization.
 -}
 
 module ACO 
-  ( optimize
+  (
+  -- * Types
+    Pheromon
+  , Coefficient
+  -- * Configuration
   , ConfigACO(..)
   , defConfig
+  -- * Optimization
+  , optimize
   ) where
 
 import Control.Applicative
@@ -37,16 +43,17 @@ type FPher = ((Vertex, Vertex) -> Pheromon)
 type FCoef = ((Vertex, Vertex) -> Coefficient)
 
 data ConfigACO = ConfigACO 
-  { paramAGen :: Int --number of ants in one generation
-  , paramNGen :: Int --number of generations
-  , paramInitPh :: Pheromon --initial value of pheromones
-  , paramAlpha  :: Coefficient --Alpha parameter
-  , paramBeta   :: Coefficient --Beta parameter
-  , paramEvRate :: Pheromon --evaporation rate
-  , paramPBest  :: Pheromon --PBest mmas parameter
-  , paramUse2Opt :: Bool -- use 2-Opt heuristic
+  { paramAGen :: Int -- ^ number of ants in one generation
+  , paramNGen :: Int -- ^ number of generations
+  , paramInitPh :: Pheromon -- ^ initial value of pheromones
+  , paramAlpha  :: Coefficient -- ^ Alpha parameter
+  , paramBeta   :: Coefficient -- ^ Beta parameter
+  , paramEvRate :: Pheromon -- ^ evaporation rate
+  , paramPBest  :: Pheromon -- ^ PBest mmas parameter
+  , paramUse2Opt :: Bool -- ^ use 2-Opt heuristic
   }
 
+-- | Default configuration.
 defConfig :: ConfigACO
 defConfig = ConfigACO 32 
                       500
