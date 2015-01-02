@@ -20,6 +20,7 @@ module TSP
   , DArray
   , FDist
     -- * Data manipulation
+  , TSPFile(..)
   , readProblemMatrix
   , readProblemFunction
   ) where
@@ -37,33 +38,34 @@ type DArray = UArray (Vertex, Vertex) Distance
 type CArray = UArray Vertex Coordinate
 type FDist = ((Vertex, Vertex) -> Distance)
 
-readProblemMatrix :: FilePath -> IO (Size, DArray)
-readProblemMatrix filePath = (\(n, distf) -> (n, distF2dist n distf)) <$> readProblemFunction filePath  
+data TSPFile = MatrixFile FilePath | Euc2DFile FilePath
 
-readProblemFunction :: FilePath -> IO (Size, FDist)
-readProblemFunction filePath = withFile filePath ReadMode $ \ file -> do
+readProblemMatrix :: TSPFile -> IO (Size, DArray)
+readProblemMatrix f@(Euc2DFile _) = (\(n, distf) -> (n, distF2dist n distf)) <$> readProblemFunction f
+readProblemMatrix (MatrixFile filePath) = withFile filePath ReadMode $ \ file -> do
+  n <- read <$> hGetLine file
+  dist <- readMatrix n <$> hGetContents file
+  dist ! (n, n) `seq` return (n, dist)
+    
+
+readProblemFunction :: TSPFile -> IO (Size, FDist)
+readProblemFunction (Euc2DFile filePath) = withFile filePath ReadMode $ \ file -> do
   n <- read <$> hGetLine file
   distf <- distC . storeCoords n <$> hGetContents file
   distf (n, n) `seq` return (n, distf)
+readProblemFunction f@(MatrixFile _) = (\(n, dist) -> (n, (dist !))) <$> readProblemMatrix f
 
 storeCoords :: Size -> String -> (CArray, CArray)
 storeCoords n s = (listArray (1, n) $ map fst lst, listArray (1, n) $ map snd lst)
 	where	lst = take n . map (lst2 . map read . words) . lines $ s
 		lst2 [a, b] = (a, b)
                 lst2 _ = error "error while reading coordinates"
---	where	readList = unfoldr (readDouble . B.dropWhile isSpace) :: B.ByteString -> [Distance]
 
 distC :: (CArray, CArray) -> (Vertex, Vertex) -> Distance
 distC (s, d) (a, b) = euc2 (s ! a) (d ! a) (s ! b) (d ! b)
 
 euc2 :: Coordinate -> Coordinate -> Coordinate -> Coordinate -> Distance
 euc2 x1 y1 x2 y2 = sqrt ((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
-rList :: String -> [Distance]
-rList = map read . words
-
-getDistances :: Size -> String -> DArray
-getDistances n source = listArray ((1, 1), (n, n)) $ take (n * n) (rList source)
 
 readMatrix :: Int -> String -> DArray
 readMatrix n = listArray ((1,1), (n,n)) . map read . words 
