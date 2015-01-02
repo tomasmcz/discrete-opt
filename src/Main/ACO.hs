@@ -7,13 +7,21 @@ import ACO
 import Main.Opts
 
 mainACO :: [Flag] -> [String] -> IO ()
-mainACO _ ("matrix":file:_) = runACO $ MatrixFile file
-mainACO _ ("coords":file:_) = runACO $ Euc2DFile file
+mainACO o ("matrix":file:_) = runACO o $ MatrixFile file
+mainACO o ("coords":file:_) = runACO o $ Euc2DFile file
 mainACO _ _ = putStrLn $ usageInfo header options
 
-runACO :: TSPFile -> IO ()
-runACO file = do
-  minPath <- uncurry (optimize defConfig) =<< readProblemMatrix file 
+runACO :: [Flag] -> TSPFile -> IO ()
+runACO opts file = do
+  let conf n = foldl modConfig (defConfig n) opts
+  minPath <- (\ (n, p) -> optimize (conf n) p) =<< readProblemMatrix file 
   putStrLn $ show (fst minPath) ++ " 0"
   mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
   putStrLn ""
+
+
+modConfig :: ConfigACO -> Flag -> ConfigACO
+modConfig conf (FGen g) = conf {paramNGen = g}
+modConfig conf (FAnts a) = conf {paramAGen = a}
+modConfig conf FTwoOpt = conf {paramUse2Opt = True}
+modConfig conf _ = conf

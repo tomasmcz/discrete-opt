@@ -24,6 +24,7 @@ import Control.Applicative
 import Control.Arrow ((&&&))
 import Control.Monad.State
 import Control.Monad.Random
+import Control.Monad.Reader
 import Control.Monad.Writer
 import Data.Array.Unboxed
 import qualified Data.IntSet as Set
@@ -43,19 +44,23 @@ type FPher = ((Vertex, Vertex) -> Pheromon)
 type FCoef = ((Vertex, Vertex) -> Coefficient)
 
 data ConfigACO = ConfigACO 
-  { paramAGen :: Int -- ^ number of ants in one generation
-  , paramNGen :: Int -- ^ number of generations
-  , paramInitPh :: Pheromon -- ^ initial value of pheromones
+  { paramSize :: Size          -- ^ size of the graph
+  , paramAGen :: Int           -- ^ number of ants in one generation
+  , paramNGen :: Int           -- ^ number of generations
+  , paramInitPh :: Pheromon    -- ^ initial value of pheromones
   , paramAlpha  :: Coefficient -- ^ Alpha parameter
   , paramBeta   :: Coefficient -- ^ Beta parameter
-  , paramEvRate :: Pheromon -- ^ evaporation rate
-  , paramPBest  :: Pheromon -- ^ PBest mmas parameter
-  , paramUse2Opt :: Bool -- ^ use 2-Opt heuristic
+  , paramEvRate :: Pheromon    -- ^ evaporation rate
+  , paramPBest  :: Pheromon    -- ^ PBest mmas parameter
+  , paramUse2Opt :: Bool       -- ^ use 2-Opt heuristic
   }
 
+type ACOm a = ReaderT ConfigACO (Rand StdGen) a
+
 -- | Default configuration.
-defConfig :: ConfigACO
-defConfig = ConfigACO 32 
+defConfig :: Size -> ConfigACO
+defConfig n = ConfigACO n
+                      32 
                       500
                       1e16
                       1.0 
@@ -64,26 +69,31 @@ defConfig = ConfigACO 32
                       0.0000005 
                       False
 
-newPhrArray :: Size -> PArray
-newPhrArray n = listArray ((1, 1), (n, n)) $ repeat (paramInitPh defConfig)
+newPhrArray :: (Monad m) => ReaderT ConfigACO m PArray
+newPhrArray = do
+  n <- asks paramSize
+  initPh <- asks paramInitPh
+  return . listArray ((1, 1), (n, n)) $ repeat initPh
 
-updatePheromones :: Pheromon -> Distance -> (Distance, Path) -> PArray -> PArray
-updatePheromones pBestCoef minP (ln, bp) = bound . update . evap
-	where	evap = amap ((1.0 - paramEvRate defConfig) *)
+updatePheromones :: (Monad m) => Pheromon -> Distance -> (Distance, Path) -> PArray -> ReaderT ConfigACO m PArray
+updatePheromones pBestCoef minP (ln, bp) phrmn = do
+  evRate <- asks paramEvRate
+  let evap = amap ((1.0 - evRate) *)
 
-		update = flip (accum (+)) pathPairs 
-		pathPairs = zip (zip bp (tail bp)) (repeat addC)
-		addC = 10.0 / ln :: Pheromon
+      update = flip (accum (+)) pathPairs 
+      pathPairs = zip (zip bp (tail bp)) (repeat addC)
+      addC = 10.0 / ln :: Pheromon
 
-		bound = amap (min phMax . max phMin)
-		phMax = 10.0 / (paramEvRate defConfig * minP) :: Pheromon
-		phMin = phMax * pBestCoef
+      bound = amap (min phMax . max phMin)
+      phMax = 10.0 / (evRate * minP) :: Pheromon
+      phMin = phMax * pBestCoef
+  return . bound . update $ evap phrmn
 
-coefs :: Size -> FDist -> FPher -> FCoef
-coefs n fDist fPher = (coefArr !) 
+coefs :: ConfigACO -> Size -> FDist -> FPher -> FCoef
+coefs conf n fDist fPher = (coefArr !) 
 	where	coefArr = listArray ((1, 1), (n, n)) lst :: CArray
 		lst = [val (x, y) | x <- [1..n], y <- [1..n]] 
-		val (x, y) = (fPher (x, y) ** paramAlpha defConfig) / (fDist (x, y) ** paramBeta defConfig)  
+		val (x, y) = (fPher (x, y) ** paramAlpha conf) / (fDist (x, y) ** paramBeta conf)  
 
 findPath :: Size -> FCoef -> Rand StdGen Path
 findPath n coef = do
@@ -113,38 +123,44 @@ pickNext coef unv = do
 
 allPaths :: Size -> FCoef -> Int -> Rand StdGen [Path]
 allPaths n coef s = execWriterT . flip evalStateT s . fix $ \ loop -> do
-	i <- get
-	path <- lift . lift $ findPath n coef
-	tell [path]
-	put $ i - 1
-	unless (i == 1) loop
+  i <- get
+  path <- lift . lift $ findPath n coef
+  tell [path]
+  put $ i - 1
+  unless (i == 1) loop
 
-bestPath :: FDist -> FPher -> Size -> Rand StdGen (Distance, Path)
-bestPath fDist fPher n = do
-	res <- allPaths n (coefs n fDist fPher) $ paramAGen defConfig
-	return . minimum . map (pathLen fDist &&& id) $ res
+bestPath :: FDist -> FPher -> ACOm (Distance, Path)
+bestPath fDist fPher = do
+  conf <- ask
+  n <- asks paramSize
+  ants <- asks paramAGen
+  res <- lift . allPaths n (coefs conf n fDist fPher) $ ants
+  return . minimum . map (pathLen fDist &&& id) $ res
 
 pathLen :: FDist -> Path -> Distance
 pathLen fDist path = foldl' ((. fDist) . (+)) 0 (zip path (tail path))
 
-generations :: ConfigACO -> Size -> DArray -> Rand StdGen [(Distance, Path)] 
-generations config n dist = do
-	let nthRoot = paramPBest config ** (1.0 / fromIntegral n)
-	let pBestCoef = (1.0 - nthRoot) / (((fromIntegral n / 2.0) - 1.0) * nthRoot) :: Pheromon
-	execWriterT . flip evalStateT (newPhrArray n, 0) . forever $ do
-		(pher, mp) <- get
-                let heuristic = if paramUse2Opt config then use2opt (dist !) else id
-		bp <- lift . lift $ heuristic <$> bestPath (dist !) (pher !) n 
-		tell [bp]
-		let minP = if mp == 0 then fst bp else min mp (fst bp)
-		let newPher = updatePheromones pBestCoef minP bp
-		put (newPher pher, minP)
-
+generations :: DArray -> ACOm [(Distance, Path)] 
+generations dist = do
+  conf <- ask
+  n <- asks paramSize
+  nthRoot <- (** (1.0 / fromIntegral n)) <$> asks paramPBest
+  let pBestCoef = (1.0 - nthRoot) / (((fromIntegral n / 2.0) - 1.0) * nthRoot) :: Pheromon
+  initPh <- newPhrArray
+  let heuristic = if paramUse2Opt conf then use2opt (dist !) else id
+  execWriterT . flip evalStateT (initPh, 0) . forever $ do
+    (pher, mp) <- get
+    bp <- lift . lift $ heuristic <$> bestPath (dist !) (pher !) 
+    tell [bp]
+    let minP = if mp == 0 then fst bp else min mp (fst bp)
+    newPher <- lift . lift $ updatePheromones pBestCoef minP bp pher
+    put (newPher, minP)
+    
 use2opt :: FDist -> (Distance, Path) -> (Distance, Path)
 use2opt dist (_, path) = let newPath = Topt.optimize dist path in (pathLen dist newPath, newPath)
 
-optimize :: ConfigACO -> Size -> DArray -> IO (Distance, Path)
-optimize config n dist = do
-	gens <- evalRandIO $ generations config n dist 
-	return . minimum . take (paramNGen defConfig) $ gens
+optimize :: ConfigACO -> DArray -> IO (Distance, Path)
+optimize config dist = do
+  gens <- evalRandIO $ runReaderT (generations dist) config
+  return . minimum . take (paramNGen config) $ gens
 
