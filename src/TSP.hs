@@ -23,9 +23,13 @@ module TSP
   , TSPFile(..)
   , readProblemMatrix
   , readProblemFunction
+    -- * Problem specification
+  , neighbours
+  , score
   ) where
 
 import Control.Applicative
+import Control.Monad.Random
 import Data.Array.Unboxed
 import System.IO
 
@@ -37,6 +41,7 @@ type Coordinate = Double
 type DArray = UArray (Vertex, Vertex) Distance
 type CArray = UArray Vertex Coordinate
 type FDist = ((Vertex, Vertex) -> Distance)
+type Score = Double
 
 data TSPFile = MatrixFile FilePath | Euc2DFile FilePath
 
@@ -72,3 +77,19 @@ readMatrix n = listArray ((1,1), (n,n)) . map read . words
 
 distF2dist :: Int -> FDist -> DArray
 distF2dist n distf = listArray ((1,1), (n, n)) . map distf $ [(a, b) | a <- [1..n], b <- [1..n]]
+
+neighbours :: FDist -> Size -> (Score, Path) -> Rand StdGen (Score, Path)
+neighbours distf n (_, st) = do
+  a <- getRandomR (1, n) 
+  c <- getRandomR (1, n) 
+  let state = makeChange (min a c) (max a c) st
+  --    newScore = (dist (a, b) + dist (c, d) - (dist (a, c) + dist (b, d)), a, c)
+  return (score distf state, state)
+
+score :: FDist -> Path -> Score
+score distf s = sum $ zipWith (curry distf) s (tail s)
+
+makeChange :: Int -> Int -> Path -> Path
+makeChange a c path = take a path ++ reverse (take (c - a) (drop a path)) ++ drop c path
+
+

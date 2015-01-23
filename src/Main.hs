@@ -5,9 +5,7 @@ module Main where
 import System.Console.GetOpt
 import System.Environment
 
-import Main.ACO
-import Main.NN
-import Main.SA
+import Main.TSP
 import Main.Opts
 
 main :: IO ()

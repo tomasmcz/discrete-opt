@@ -20,4 +20,4 @@ getOpts argv  = case getOpt Permute options argv of
     (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
 
 header :: String
-header = "Usage: discrete-opt <aco|as|nn> <matrix|coords> FILE [OPTION...]"
+header = "Usage: discrete-opt <aco|sa|nn> <matrix|coords> FILE [OPTION...]"
