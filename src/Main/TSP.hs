@@ -1,3 +1,5 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Main.TSP where
 
 import Control.Monad.Random
@@ -11,17 +13,17 @@ import TSP.NN
 import qualified TSP.TwoOpt
 import Main.Opts
 
+getTSPfile :: [Flag] -> [String] -> TSPFile
+getTSPfile ((FCoords `elem`) -> True) (file:_) = Euc2DFile file
+getTSPfile _ (file:_) = MatrixFile file
+getTSPfile _ _ = error $ usageInfo header options
+
 saConfig :: SA.Config
 saConfig = SA.Config 300000 0.99 100 7 10
 
-mainSA :: [Flag] -> [String] -> IO ()
-mainSA _ ("matrix":file:_) = runSA $ MatrixFile file
-mainSA _ ("coords":file:_) = runSA $ Euc2DFile file
-mainSA _ _ = putStrLn $ usageInfo header options
-
-runSA :: TSPFile -> IO ()
-runSA file = do
-  (n, distf) <- readProblemFunction file
+tspSA :: [Flag] -> [String] -> IO ()
+tspSA opts args = do
+  (n, distf) <- readProblemFunction $ getTSPfile opts args
   (minPath1, _) <- evalRandIO $ SA.optimize
                      saConfig
                      (neighbours distf n)
@@ -32,31 +34,21 @@ runSA file = do
   mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
   putStrLn ""
 
-mainNN :: [Flag] -> [String] -> IO ()
-mainNN _ ("matrix":file:_) = runNN $ MatrixFile file
-mainNN _ ("coords":file:_) = runNN $ Euc2DFile file
-mainNN _ _ = putStrLn $ usageInfo header options
+tspNN :: [Flag] -> [String] -> IO ()
+tspNN opts args = do
+  (n, dist) <- readProblemFunction $ getTSPfile opts args
+  let path = TSP.NN.optimize dist n
+--  let paths = map (findPath n dist) [1..n]
+--  let path = minimum $ map (pathLen dist &&& id) paths
+  putStrLn $ show (fst path) ++ " 0"
+--  mapM_ (putStr . (++ " ") . show) . take n $ snd path
+  mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd path
+  putStrLn ""
 
-runNN :: TSPFile -> IO ()
-runNN file = do
-        (n, dist) <- readProblemFunction file
-	let path = TSP.NN.optimize dist n
---	let paths = map (findPath n dist) [1..n]
---	let path = minimum $ map (pathLen dist &&& id) paths
-        putStrLn $ show (fst path) ++ " 0"
---	mapM_ (putStr . (++ " ") . show) . take n $ snd path
-	mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd path
-        putStrLn ""
-
-mainACO :: [Flag] -> [String] -> IO ()
-mainACO o ("matrix":file:_) = runACO o $ MatrixFile file
-mainACO o ("coords":file:_) = runACO o $ Euc2DFile file
-mainACO _ _ = putStrLn $ usageInfo header options
-
-runACO :: [Flag] -> TSPFile -> IO ()
-runACO opts file = do
+tspACO :: [Flag] -> [String] -> IO ()
+tspACO opts args = do
   let conf n = foldl modConfig (defConfig n) opts
-  minPath <- (\ (n, p) -> ACO.optimize (conf n) p) =<< readProblemMatrix file 
+  minPath <- (\ (n, p) -> ACO.optimize (conf n) p) =<< readProblemMatrix (getTSPfile opts args) 
   putStrLn $ show (fst minPath) ++ " 0"
   mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
   putStrLn ""

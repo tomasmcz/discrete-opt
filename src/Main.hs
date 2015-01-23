@@ -16,7 +16,7 @@ main = do
 run :: [Flag] -> [String] -> IO ()
 run ((FHelp `elem`) -> True) _ = putStrLn $ usageInfo header options
 run ((FVersion `elem`) -> True) _ = putStrLn $ "0.1.0.0"
-run opts ("aco":args) = mainACO opts args
-run opts ("nn":args) = mainNN opts args
-run opts ("sa":args) = mainSA opts args
+run opts ("tsp":"aco":args) = tspACO opts args
+run opts ("tsp":"nn":args) = tspNN opts args
+run opts ("tsp":"sa":args) = tspSA opts args
 run _ _ = putStrLn $ usageInfo header options
