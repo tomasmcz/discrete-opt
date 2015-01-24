@@ -72,13 +72,13 @@ prob t old new | new < old = 1
                | otherwise = exp ((old - new) / t)
 
 descent :: ((Score, d) -> [(Score, d)]) -> (Score, d) -> ((Score, d), [String])
-descent nbrsF init = runWriter . flip evalStateT init . fix $ \ loop -> do
+descent nbrsF initial = runWriter . flip evalStateT initial . fix $ \ loop -> do
         (sc, st) <- get
         let better = filter ((< sc) . fst) $ nbrsF (sc, st)
         if null better
                 then return (sc, st)
                 else do
-                        let next = head better
-                        put next
-                        tell [show . fst $ next]
+                        let nxt = head better
+                        put nxt
+                        tell [show . fst $ nxt]
                         loop

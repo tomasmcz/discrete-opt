@@ -4,7 +4,6 @@ module Main.TSP where
 
 import Control.Monad.Random
 import System.Console.GetOpt
-import System.Random ()
 
 import ACO
 import SA
