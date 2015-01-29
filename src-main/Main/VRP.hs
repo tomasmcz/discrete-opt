@@ -7,7 +7,7 @@ import Control.Monad.Random
 import System.Random ()
 import qualified Data.Map as M
 
---import ACO
+import ACO
 import SA
 import VRP
 import Main.Opts
@@ -26,3 +26,15 @@ vrpSA _ (file:_) = do
   mapM_ putStrLn info2
   putStrLn $ (show . fst $ solution) ++ " 0"
   mapM_ (putStrLn . unwords . map show . (0 :) . (++ [0])) (snd . snd $ solution)
+
+{-
+vrpACO :: [Flag] -> [String] -> IO ()
+vrpACO opts (file:_) = do
+  (n, v, c, distF, demF) <- readProblem $ file
+  let p = undefined
+  let conf = (foldl modConfig (defConfig n) opts) {penalty = p}
+  minPath <- ACO.optimize conf p
+  putStrLn $ show (fst minPath) ++ " 0"
+  mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
+  putStrLn ""
+-}

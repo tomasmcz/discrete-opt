@@ -1,5 +1,6 @@
 module Main.Opts where
 
+import ACO (ConfigACO(..))
 import System.Console.GetOpt
 
 data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords
@@ -22,3 +23,9 @@ getOpts argv  = case getOpt Permute options argv of
 
 header :: String
 header = "Usage: discrete-opt <tsp|vrp> <aco|sa|nn> FILE [OPTION...]"
+
+modConfig :: ConfigACO -> Flag -> ConfigACO
+modConfig conf (FGen g) = conf {paramNGen = g}
+modConfig conf (FAnts a) = conf {paramAGen = a}
+modConfig conf FTwoOpt = conf {paramUse2Opt = True}
+modConfig conf _ = conf

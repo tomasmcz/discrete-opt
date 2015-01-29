@@ -53,7 +53,10 @@ data ConfigACO = ConfigACO
   , paramEvRate :: Pheromon    -- ^ evaporation rate
   , paramPBest  :: Pheromon    -- ^ PBest mmas parameter
   , paramUse2Opt :: Bool       -- ^ use 2-Opt heuristic
+  , penalty :: Path -> Double -> Double  -- ^ penalty function
   }
+
+-- TODO better type for penalty
 
 type ACOm a = ReaderT ConfigACO (Rand StdGen) a
 
@@ -68,6 +71,7 @@ defConfig n = ConfigACO n
                       0.001
                       0.0000005 
                       False
+                      (const id)
 
 newPhrArray :: (Monad m) => ReaderT ConfigACO m PArray
 newPhrArray = do
@@ -135,7 +139,7 @@ bestPath fDist fPher = do
   n <- asks paramSize
   ants <- asks paramAGen
   res <- lift . allPaths n (coefs conf n fDist fPher) $ ants
-  return . minimum . map (pathLen fDist &&& id) $ res
+  return . minimum . map (\ p -> (penalty conf p (pathLen fDist p), p)) $ res
 
 pathLen :: FDist -> Path -> Distance
 pathLen fDist path = foldl' ((. fDist) . (+)) 0 (zip path (tail path))

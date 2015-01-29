@@ -55,8 +55,6 @@ type DistF = (Vertex, Vertex) -> Distance
 type DemF = Vertex -> Demand
 type State = M.Map Int Vertex
 
-
-
 readProblem :: FilePath -> IO (Size, Size, Capacity, DistF, DemF)
 readProblem filePath = withFile filePath ReadMode $ \ file -> do
   [n, v, c] <- map read . words <$> hGetLine file 
@@ -97,4 +95,3 @@ allNeigh :: (State -> (Score, [Path])) -> Solution -> [Solution]
 allNeigh solver (_, (s, _)) = map ((\ w -> scc (solver w) w) . (\ (x, y) -> switch x y s)) pairs
 	where 	scc (e, sol) st = (e, (st, sol))
 		pairs = [(x, y) | x <- [1..M.size s], y <- [1..M.size s], x < y]
-

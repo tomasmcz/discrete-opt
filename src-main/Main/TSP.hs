@@ -52,8 +52,3 @@ tspACO opts args = do
   mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
   putStrLn ""
 
-modConfig :: ConfigACO -> Flag -> ConfigACO
-modConfig conf (FGen g) = conf {paramNGen = g}
-modConfig conf (FAnts a) = conf {paramAGen = a}
-modConfig conf FTwoOpt = conf {paramUse2Opt = True}
-modConfig conf _ = conf
