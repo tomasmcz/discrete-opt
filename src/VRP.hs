@@ -15,6 +15,13 @@ module VRP
   , Path
   , Distance
   , Coordinate
+  , Capacity
+  , Demand
+  , Solution
+  , State
+  , Score
+  , DistF
+  , DemF
     -- * Array types
   , DArray
     -- * Data manipulation
@@ -65,9 +72,6 @@ distC (s, d) (a, b) = euc2 (s ! a) (d ! a) (s ! b) (d ! b)
 euc2 :: Coordinate -> Coordinate -> Coordinate -> Coordinate -> Distance
 euc2 x1 y1 x2 y2 = sqrt ((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
---readMatrix :: Int -> String -> DArray
---readMatrix n = listArray ((1,1), (n,n)) . map read . words 
-
 score :: DistF -> DemF -> Capacity -> [Path] -> Score
 score distF demF c sol = sum $ dist ++ penal
 	where 	penal = map (fromIntegral . (* 100) . max 0 . (\x -> x - c) . sum . map demF) sol :: [Double]
@@ -86,9 +90,11 @@ neighbour solver rang (_, (s, _)) = do
 	let (nSc, sol) = solver nSt
 	return (nSc, (nSt, sol))
 
+switch :: Vertex -> Vertex -> State -> State
+switch a b m = M.insert b (m M.! a) $ M.insert a (m M.! b) m
 
+allNeigh :: (State -> (Score, [Path])) -> Solution -> [Solution]
 allNeigh solver (_, (s, _)) = map ((\ w -> scc (solver w) w) . (\ (x, y) -> switch x y s)) pairs
 	where 	scc (e, sol) st = (e, (st, sol))
 		pairs = [(x, y) | x <- [1..M.size s], y <- [1..M.size s], x < y]
 
-switch a b m = M.insert b (m M.! a) $ M.insert a (m M.! b) m

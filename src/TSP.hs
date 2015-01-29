@@ -15,6 +15,7 @@ module TSP
   , Path
   , Distance
   , Coordinate
+  , Score
     -- * Array types
   , CArray
   , DArray
