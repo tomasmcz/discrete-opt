@@ -63,9 +63,10 @@ readProblemFunction f@(MatrixFile _) = (\(n, dist) -> (n, (dist !))) <$> readPro
 
 storeCoords :: Size -> String -> (CArray, CArray)
 storeCoords n s = (listArray (1, n) $ map fst lst, listArray (1, n) $ map snd lst)
-	where	lst = take n . map (lst2 . map read . words) . lines $ s
-		lst2 [a, b] = (a, b)
-                lst2 _ = error "error while reading coordinates"
+  where
+    lst = take n . map (lst2 . map read . words) . lines $ s
+    lst2 [a, b] = (a, b)
+    lst2 _ = error "error while reading coordinates"
 
 distC :: (CArray, CArray) -> (Vertex, Vertex) -> Distance
 distC (s, d) (a, b) = euc2 (s ! a) (d ! a) (s ! b) (d ! b)
@@ -92,5 +93,3 @@ score distf s = sum $ zipWith (curry distf) s (tail s)
 
 makeChange :: Int -> Int -> Path -> Path
 makeChange a c path = take a path ++ reverse (take (c - a) (drop a path)) ++ drop c path
-
-

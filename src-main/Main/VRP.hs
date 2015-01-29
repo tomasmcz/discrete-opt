@@ -17,7 +17,7 @@ saConfig = SA.Config 300000 0.99 100 7 10
 
 vrpSA :: [Flag] -> [String] -> IO ()
 vrpSA _ (file:_) = do
-  (n, v, c, distF, demF) <- readProblem $ file
+  (n, v, c, distF, demF) <- readProblemF $ file
   let initState = M.fromList . zip [1..] $ [1..n-1] ++ replicate (v - 1) 0
   let (initSc, initSol) = solve distF demF c initState
   (solut, info) <- evalRandIO $ SA.optimize saConfig (neighbour (solve distF demF c) (1, M.size initState)) (initSc, (initState, initSol))
@@ -27,14 +27,11 @@ vrpSA _ (file:_) = do
   putStrLn $ (show . fst $ solution) ++ " 0"
   mapM_ (putStrLn . unwords . map show . (0 :) . (++ [0])) (snd . snd $ solution)
 
-{-
 vrpACO :: [Flag] -> [String] -> IO ()
 vrpACO opts (file:_) = do
-  (n, v, c, distF, demF) <- readProblem $ file
-  let p = undefined
+  (n, v, dist, p) <- readProblemM $ file
   let conf = (foldl modConfig (defConfig n) opts) {penalty = p}
-  minPath <- ACO.optimize conf p
+  minPath <- ACO.optimize conf dist
   putStrLn $ show (fst minPath) ++ " 0"
   mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
   putStrLn ""
--}

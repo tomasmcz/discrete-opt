@@ -54,6 +54,7 @@ data ConfigACO = ConfigACO
   , paramPBest  :: Pheromon    -- ^ PBest mmas parameter
   , paramUse2Opt :: Bool       -- ^ use 2-Opt heuristic
   , penalty :: Path -> Double -> Double  -- ^ penalty function
+  , originRandom :: Bool       -- ^ randomize origin
   }
 
 -- TODO better type for penalty
@@ -72,6 +73,7 @@ defConfig n = ConfigACO n
                       0.0000005 
                       False
                       (const id)
+                      True
 
 newPhrArray :: (Monad m) => ReaderT ConfigACO m PArray
 newPhrArray = do
@@ -95,37 +97,39 @@ updatePheromones pBestCoef minP (ln, bp) phrmn = do
 
 coefs :: ConfigACO -> Size -> FDist -> FPher -> FCoef
 coefs conf n fDist fPher = (coefArr !) 
-	where	coefArr = listArray ((1, 1), (n, n)) lst :: CArray
-		lst = [val (x, y) | x <- [1..n], y <- [1..n]] 
-		val (x, y) = (fPher (x, y) ** paramAlpha conf) / (fDist (x, y) ** paramBeta conf)  
+  where
+    coefArr = listArray ((1, 1), (n, n)) lst :: CArray
+    lst = [val (x, y) | x <- [1..n], y <- [1..n]] 
+    val (x, y) = (fPher (x, y) ** paramAlpha conf) / (fDist (x, y) ** paramBeta conf)  
 
-findPath :: Size -> FCoef -> Rand StdGen Path
+findPath :: Size -> FCoef -> ACOm Path
 findPath n coef = do
-	origin <- getRandomR (1, n)
-	let st = (Set.delete origin (Set.fromAscList [1..n]), origin)
-	res <- execWriterT . flip evalStateT st . fix $ \ loop -> do
-		(unv, lst) <- get
-		nxt <- lift . lift $ pickNext (\ x -> coef (lst, x)) (Set.elems unv) 
-		let unv' = Set.delete nxt unv
-		put (unv', nxt)
-		tell [nxt]
-		unless (Set.null unv') loop 
-	return $ (origin:res) ++ [origin]
+  randOrig <- asks originRandom
+  origin <- if randOrig then getRandomR (1, n) else return 0
+  let st = (Set.delete origin (Set.fromAscList [1..n]), origin)
+  res <- lift . execWriterT . flip evalStateT st . fix $ \ loop -> do
+    (unv, lst) <- get
+    nxt <- lift . lift $ pickNext (\ x -> coef (lst, x)) (Set.elems unv) 
+    let unv' = Set.delete nxt unv
+    put (unv', nxt)
+    tell [nxt]
+    unless (Set.null unv') loop 
+  return $ (origin:res) ++ [origin]
 
 pickNext :: (Vertex -> Coefficient) -> [Vertex] -> Rand StdGen Vertex
 pickNext coef unv = do
-	let list = map (coef &&& id) unv :: [(Probability, Vertex)]
-	let norm = foldl' ((. fst) . (+)) 0 list
-	r <- (* norm) <$> getRandom
-	return . flip evalState (0, list) . fix $ \ loop -> do
-		(s,(p,v):ts) <- get
-		let ns = s + p
-		put (ns, ts)
-		if r <= ns 
-			then return v
-			else loop
+  let list = map (coef &&& id) unv :: [(Probability, Vertex)]
+      norm = foldl' ((. fst) . (+)) 0 list
+  r <- (* norm) <$> getRandom
+  return . flip evalState (0, list) . fix $ \ loop -> do
+    (s,(p,v):ts) <- get
+    let ns = s + p
+    put (ns, ts)
+    if r <= ns 
+      then return v
+      else loop
 
-allPaths :: Size -> FCoef -> Int -> Rand StdGen [Path]
+allPaths :: Size -> FCoef -> Int -> ACOm [Path]
 allPaths n coef s = execWriterT . flip evalStateT s . fix $ \ loop -> do
   i <- get
   path <- lift . lift $ findPath n coef
@@ -138,7 +142,7 @@ bestPath fDist fPher = do
   conf <- ask
   n <- asks paramSize
   ants <- asks paramAGen
-  res <- lift . allPaths n (coefs conf n fDist fPher) $ ants
+  res <- allPaths n (coefs conf n fDist fPher) $ ants
   return . minimum . map (\ p -> (penalty conf p (pathLen fDist p), p)) $ res
 
 pathLen :: FDist -> Path -> Distance
@@ -167,4 +171,3 @@ optimize :: ConfigACO -> DArray -> IO (Distance, Path)
 optimize config dist = do
   gens <- evalRandIO $ runReaderT (generations dist) config
   return . minimum . take (paramNGen config) $ gens
-
