@@ -1,7 +1,9 @@
 module Main.Opts where
 
-import ACO (ConfigACO(..))
 import System.Console.GetOpt
+
+import ACO (ConfigACO(..))
+import SA (Config(..))
 
 data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords
   deriving (Eq)
@@ -29,3 +31,6 @@ modConfig conf (FGen g) = conf {paramNGen = g}
 modConfig conf (FAnts a) = conf {paramAGen = a}
 modConfig conf FTwoOpt = conf {paramUse2Opt = True}
 modConfig conf _ = conf
+
+modConfigSA :: SA.Config -> Flag -> SA.Config
+modConfigSA conf _ = conf
