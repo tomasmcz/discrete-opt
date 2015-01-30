@@ -10,6 +10,21 @@ and VRP as well as some heuristics (NN, 2-opt).
 
 http://tomasmcz.github.io/discrete-opt [Not quite complete yet.]
 
+## Installation
+
+I recommend using Cabal with a sandbox:
+
+    cabal sandbox init
+    cabal install --only-dep
+
+You can test the program on a simple problem:    
+
+    cabal run tsp aco data/tsp_51 -- --coords
+
+To see the command-line options, you can run:
+
+    cabal run -- -h
+
 ## License
 
 This work is licensed under BSD-3 license.

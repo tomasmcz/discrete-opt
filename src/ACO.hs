@@ -18,6 +18,7 @@ module ACO
   , defConfig
   -- * Optimization
   , optimize
+  , optimizeWithInfo
   ) where
 
 import Control.Applicative
@@ -183,3 +184,9 @@ optimize :: ConfigACO -> DArray -> IO (Distance, Path)
 optimize config dist = do
   gens <- evalRandIO $ runReaderT (generations dist) config
   return . minimum . take (paramNGen config) $ gens
+
+optimizeWithInfo :: ConfigACO -> DArray -> IO ((Distance, Path), [Distance])
+optimizeWithInfo config dist = do
+  gens <- evalRandIO $ runReaderT (generations dist) config
+  let res = take (paramNGen config) $ gens
+  return (minimum res, map fst res)
