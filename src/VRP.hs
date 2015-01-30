@@ -75,7 +75,7 @@ readProblemM filePath = withFile filePath ReadMode $ \ file -> do
       demF = (!) (listArray (0, n - 1) $ map read dem :: DArray)
       dist = distF2dist n distF
       penalty = penal (n + v -1) c demF
-  dist ! (n, n) `seq` return (n, v, dist, penalty)
+  dist ! (n - 1, n - 1) `seq` return (n, v, dist, penalty)
 
 penal :: Size -> Capacity -> DemF -> PenaltyF
 penal nv c demF p s = (s +) . sum $ map (fromIntegral . (* 100) . max 0 . subtract c . sum . map demF) sol
@@ -88,7 +88,7 @@ findZero (_:l) = findZero l
 findZero [] = error "no 0 in VRP path"
 
 distF2dist :: Int -> DistF -> DistArray
-distF2dist n distf = listArray ((1,1), (n, n)) . map distf $ [(a, b) | a <- [1..n], b <- [1..n]]
+distF2dist n distf = listArray ((0,0), (n - 1, n - 1)) . map distf $ [(a, b) | a <- [0..n - 1], b <- [0..n - 1]]
 
 distC :: (CoArray, CoArray) -> (Vertex, Vertex) -> Distance
 distC (s, d) (a, b) = euc2 (s ! a) (d ! a) (s ! b) (d ! b)

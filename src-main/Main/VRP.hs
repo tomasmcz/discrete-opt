@@ -30,8 +30,8 @@ vrpSA _ (file:_) = do
 vrpACO :: [Flag] -> [String] -> IO ()
 vrpACO opts (file:_) = do
   (n, v, dist, p) <- readProblemM $ file
-  let conf = (foldl modConfig (defConfig n) opts) {penalty = p}
+  let conf = (foldl modConfig (defConfig (n - 1)) opts) {penalty = p, originRandom = False, returnToOrigin = v - 1}
   minPath <- ACO.optimize conf dist
-  putStrLn $ show (fst minPath) ++ " 0"
-  mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
+  putStrLn $ show (fst minPath) 
+  mapM_ (putStr . (++ " ") . show) $ snd minPath
   putStrLn ""

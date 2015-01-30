@@ -55,9 +55,11 @@ data ConfigACO = ConfigACO
   , paramUse2Opt :: Bool       -- ^ use 2-Opt heuristic
   , penalty :: Path -> Double -> Double  -- ^ penalty function
   , originRandom :: Bool       -- ^ randomize origin
+  , returnToOrigin :: Int      -- ^ return to origin n times
   }
 
 -- TODO better type for penalty
+-- TODO remove all the HACKs
 
 type ACOm a = ReaderT ConfigACO (Rand StdGen) a
 
@@ -74,12 +76,15 @@ defConfig n = ConfigACO n
                       False
                       (const id)
                       True
+                      0
 
 newPhrArray :: (Monad m) => ReaderT ConfigACO m PArray
 newPhrArray = do
   n <- asks paramSize
   initPh <- asks paramInitPh
-  return . listArray ((1, 1), (n, n)) $ repeat initPh
+  r <- asks returnToOrigin 
+  let b = if r > 0 then 0 else 1 -- HACK
+  return . listArray ((b, b), (n, n)) $ repeat initPh
 
 updatePheromones :: (Monad m) => Pheromon -> Distance -> (Distance, Path) -> PArray -> ReaderT ConfigACO m PArray
 updatePheromones pBestCoef minP (ln, bp) phrmn = do
@@ -98,22 +103,29 @@ updatePheromones pBestCoef minP (ln, bp) phrmn = do
 coefs :: ConfigACO -> Size -> FDist -> FPher -> FCoef
 coefs conf n fDist fPher = (coefArr !) 
   where
-    coefArr = listArray ((1, 1), (n, n)) lst :: CArray
-    lst = [val (x, y) | x <- [1..n], y <- [1..n]] 
-    val (x, y) = (fPher (x, y) ** paramAlpha conf) / (fDist (x, y) ** paramBeta conf)  
+    b = if returnToOrigin conf > 0 then 0 else 1 -- HACK
+    coefArr = listArray ((b, b), (n, n)) lst :: CArray
+    lst = [val (x, y) | x <- [b..n], y <- [b..n]] 
+    val (x, y) = (fPher (x, y) ** paramAlpha conf) / (dist (x, y) ** paramBeta conf)
+    dist (0, 0) = 50 -- HACK
+    dist (x, y) = fDist (x, y)
 
 findPath :: Size -> FCoef -> ACOm Path
 findPath n coef = do
-  randOrig <- asks originRandom
-  origin <- if randOrig then getRandomR (1, n) else return 0
-  let st = (Set.delete origin (Set.fromAscList [1..n]), origin)
+  randOrig <- asks originRandom -- HACK
+  v <- asks returnToOrigin -- HACK
+  origin <- if randOrig then getRandomR (1, n) else return 0 -- HACK
+  let sta = if randOrig then Set.delete origin (Set.fromAscList [1..n]) else Set.fromAscList [1..n]
+      zrs = if randOrig then [] else replicate v 0
+      st = (sta, origin, zrs)
   res <- lift . execWriterT . flip evalStateT st . fix $ \ loop -> do
-    (unv, lst) <- get
-    nxt <- lift . lift $ pickNext (\ x -> coef (lst, x)) (Set.elems unv) 
-    let unv' = Set.delete nxt unv
-    put (unv', nxt)
+    (unv, lst, orgs) <- get
+    nxt <- lift . lift . pickNext (\ x -> coef (lst, x)) $ (Set.elems unv) ++ orgs -- HACK
+    let unv' = if nxt == 0 then unv else Set.delete nxt unv
+        orgs' = if nxt == 0 then tail orgs else orgs -- HACK
+    put (unv', nxt, orgs')
     tell [nxt]
-    unless (Set.null unv') loop 
+    unless (Set.null unv' && null orgs' ) loop 
   return $ (origin:res) ++ [origin]
 
 pickNext :: (Vertex -> Coefficient) -> [Vertex] -> Rand StdGen Vertex

@@ -49,6 +49,6 @@ tspACO opts args = do
   let conf n = foldl modConfig (defConfig n) opts
   minPath <- (\ (n, p) -> ACO.optimize (conf n) p) =<< readProblemMatrix (getTSPfile opts args) 
   putStrLn $ show (fst minPath) ++ " 0"
-  mapM_ (putStr . (++ " ") . show . (+ (-1))) . tail $ snd minPath
+  mapM_ (putStr . (++ " ") . show . subtract 1) . tail $ snd minPath
   putStrLn ""
 
