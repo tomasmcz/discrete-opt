@@ -43,11 +43,6 @@ tspSA opts args = do
   mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
   putStrLn ""
 
-fPlot :: [Flag] -> Maybe FilePath
-fPlot ((FPlot f):_) = Just f
-fPlot (_:fs) = fPlot fs
-fPlot [] = Nothing
-
 tspNN :: [Flag] -> [String] -> IO ()
 tspNN opts args = do
   (n, dist) <- readProblemFunction $ getTSPfile opts args
