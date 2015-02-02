@@ -36,6 +36,8 @@ import Data.List (foldl')
 import TSP hiding (CArray)
 import qualified TSP.TwoOpt as Topt
 
+import Control.Monad.Identity
+
 type Probability = Double
 type Pheromon = Double
 type Coefficient = Double
@@ -79,7 +81,10 @@ defConfig n = ConfigACO n
                       True
                       0
 
-newPhrArray :: (Monad m) => ReaderT ConfigACO m PArray
+lower :: (Monad m) => Reader r a -> ReaderT r m a
+lower = mapReaderT (return . runIdentity) 
+
+newPhrArray :: Reader ConfigACO PArray
 newPhrArray = do
   n <- asks paramSize
   initPh <- asks paramInitPh
@@ -87,10 +92,14 @@ newPhrArray = do
   let b = if r > 0 then 0 else 1 -- HACK
   return . listArray ((b, b), (n, n)) $ repeat initPh
 
-updatePheromones :: (Monad m) => Pheromon -> Distance -> (Distance, Path) -> PArray -> ReaderT ConfigACO m PArray
-updatePheromones pBestCoef minP (ln, bp) phrmn = do
+updatePheromones :: Distance -> (Distance, Path) -> PArray -> Reader ConfigACO PArray
+updatePheromones minP (ln, bp) phrmn = do
   evRate <- asks paramEvRate
-  let evap = amap ((1.0 - evRate) *)
+  n <- asks paramSize
+  prmPB <- asks paramPBest
+  let nthRoot = (** (1.0 / fromIntegral n)) prmPB
+      pBestCoef = (1.0 - nthRoot) / (((fromIntegral n / 2.0) - 1.0) * nthRoot) :: Pheromon
+      evap = amap ((1.0 - evRate) *)
 
       update = flip (accum (+)) pathPairs 
       pathPairs = zip (zip bp (tail bp)) (repeat addC)
@@ -163,18 +172,15 @@ pathLen fDist path = foldl' ((. fDist) . (+)) 0 (zip path (tail path))
 
 generations :: DArray -> ACOm [(Distance, Path)] 
 generations dist = do
-  conf <- ask
-  n <- asks paramSize
-  nthRoot <- (** (1.0 / fromIntegral n)) <$> asks paramPBest
-  let pBestCoef = (1.0 - nthRoot) / (((fromIntegral n / 2.0) - 1.0) * nthRoot) :: Pheromon
-  initPh <- newPhrArray
-  let heuristic = if paramUse2Opt conf then use2opt (dist !) else id
+  twoOpt <- asks paramUse2Opt
+  initPh <- lower newPhrArray
+  let heuristic = if twoOpt then use2opt (dist !) else id
   execWriterT . flip evalStateT (initPh, 0) . forever $ do
     (pher, mp) <- get
     bp <- lift . lift $ heuristic <$> bestPath (dist !) (pher !) 
     tell [bp]
     let minP = if mp == 0 then fst bp else min mp (fst bp)
-    newPher <- lift . lift $ updatePheromones pBestCoef minP bp pher
+    newPher <- lift . lift . lower $ updatePheromones minP bp pher
     put (newPher, minP)
     
 use2opt :: FDist -> (Distance, Path) -> (Distance, Path)
