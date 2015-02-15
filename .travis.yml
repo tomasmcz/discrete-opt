@@ -24,7 +24,7 @@ install:
  - /opt/ghc/$GHCVER/bin/ghc-pkg recache --user
  - cabal update
  - cabal sandbox init
- - cabal install --only-dependencies --enable-tests --enable-benchmarks  --max-backjumps=1000
+ - cabal install --only-dependencies --enable-tests --enable-benchmarks  --max-backjumps=10000
 
 script:
  - cabal configure
