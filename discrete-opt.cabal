@@ -24,7 +24,7 @@ library
                      , VRP
   -- other-modules:       
   other-extensions:    TemplateHaskell
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >=4.6 && <4.8
                      , array >=0.5 && <0.6
                      , containers >=0.5 && <0.6
                      , random
@@ -40,7 +40,7 @@ executable discrete-opt
   other-modules:       Main.TSP
                      , Main.VRP
   -- other-extensions:    
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >=4.6 && <4.8
                      , discrete-opt
                      , array >=0.5 && <0.6
                      , containers >=0.5 && <0.6

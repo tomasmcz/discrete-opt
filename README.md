@@ -1,5 +1,7 @@
 # Discrete optimization
 
+[![Build Status](https://secure.travis-ci.org/tomasmcz/discrete-opt.png?branch=master)](http://travis-ci.org/tomasmcz/discrete-opt)
+
 ## Work in progress
 
 This is a repository of old Haskell code that will be transformed into a
