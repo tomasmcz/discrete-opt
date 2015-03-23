@@ -5,7 +5,7 @@ import System.Console.GetOpt
 import ACO (ConfigACO(..))
 import SA (Config(..))
 
-data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double
+data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts
   deriving (Eq)
 
 options :: [OptDescr Flag]
@@ -19,12 +19,16 @@ options =
   , Option [] ["verb"] (NoArg FVerb) "verbose"
   , Option ['p'] ["plot"] (ReqArg FPlot "FILE") "plot score"
   , Option [] ["fin"] (ReqArg (FFin . read) "D") "final temperature for SA"
+  , Option [] ["list-options"] (NoArg FOpts) "list options"
   ]
 
 getOpts :: [String] -> IO ([Flag], [String])
 getOpts argv  = case getOpt Permute options argv of
     (o, n, []) -> return (o,n)
     (_, _, errs) -> ioError (userError (concat errs ++ usageInfo header options))
+
+listOpts :: [OptDescr Flag] -> IO ()
+listOpts = mapM_ (\(Option _ [o] _ _) -> putStrLn $ "--" ++ o)
 
 header :: String
 header = "Usage: discrete-opt <tsp|vrp> <aco|sa|nn> FILE [OPTION...]"
