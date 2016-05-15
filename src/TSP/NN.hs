@@ -2,7 +2,7 @@
 Copyright    : 2014 Tomáš Musil
 License      : BSD-3
 Stability    : experimental
-Portability  : portable 
+Portability  : portable
 
 Nearest Neighbour heuristic for TSP.
 
@@ -25,8 +25,8 @@ findPath :: Size -> FDist -> Vertex -> Path
 findPath n dist origin = origin : fp dist origin origin (Set.delete origin (Set.fromAscList [1..n]))
 
 fp dist frst lst unv | not (Set.null unv) = nearest : fp dist frst nearest (Set.delete nearest unv)
-	where 	nearest = snd (minimum (map dist' (Set.elems unv)))
-		dist' x = (dist (lst, x), x)
+    where nearest = snd (minimum (map dist' (Set.elems unv)))
+          dist' x = (dist (lst, x), x)
 fp _ frst _ _ = [frst]
 
 allPaths :: FDist -> Size -> [Path]

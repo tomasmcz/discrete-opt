@@ -2,7 +2,7 @@
 Copyright    : 2014 Tomáš Musil
 License      : BSD-3
 Stability    : experimental
-Portability  : portable 
+Portability  : portable
 
 Ant Colony Optimization.
 
@@ -130,7 +130,7 @@ findPath n coef = do
       st = (sta, origin, zrs)
   res <- lift . execWriterT . flip evalStateT st . fix $ \ loop -> do
     (unv, lst, orgs) <- get
-    nxt <- lift . lift . pickNext (\ x -> coef (lst, x)) $ (Set.elems unv) ++ orgs -- HACK
+    nxt <- lift . lift . pickNext (\ x -> coef (lst, x)) $ Set.elems unv ++ orgs -- HACK
     let unv' = if nxt == 0 then unv else Set.delete nxt unv
         orgs' = if nxt == 0 then tail orgs else orgs -- HACK
     put (unv', nxt, orgs')
@@ -147,7 +147,7 @@ pickNext coef unv = do
     (s,(p,v):ts) <- get
     let ns = s + p
     put (ns, ts)
-    if r <= ns 
+    if r <= ns
       then return v
       else loop
 
@@ -164,13 +164,13 @@ bestPath fDist fPher = do
   conf <- ask
   n <- asks paramSize
   ants <- asks paramAGen
-  res <- allPaths n (coefs conf n fDist fPher) $ ants
+  res <- allPaths n (coefs conf n fDist fPher) ants
   return . minimum . map (\ p -> (penalty conf p (pathLen fDist p), p)) $ res
 
 pathLen :: FDist -> Path -> Distance
 pathLen fDist path = foldl' ((. fDist) . (+)) 0 (zip path (tail path))
 
-generations :: DArray -> ACOm [(Distance, Path)] 
+generations :: DArray -> ACOm [(Distance, Path)]
 generations dist = do
   twoOpt <- asks paramUse2Opt
   initPh <- lower newPhrArray
@@ -182,7 +182,7 @@ generations dist = do
     let minP = if mp == 0 then fst bp else min mp (fst bp)
     newPher <- lift . lift . lower $ updatePheromones minP bp pher
     put (newPher, minP)
-    
+
 use2opt :: FDist -> (Distance, Path) -> (Distance, Path)
 use2opt dist (_, path) = let newPath = Topt.optimize dist path in (pathLen dist newPath, newPath)
 
@@ -194,5 +194,5 @@ optimize config dist = do
 optimizeWithInfo :: ConfigACO -> DArray -> IO ((Distance, Path), [Distance])
 optimizeWithInfo config dist = do
   gens <- evalRandIO $ runReaderT (generations dist) config
-  let res = take (paramNGen config) $ gens
+  let res = take (paramNGen config) gens
   return (minimum res, map fst res)

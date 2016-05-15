@@ -44,7 +44,6 @@ modConfigSA conf (FFin t) = conf {finalTemp = t}
 modConfigSA conf _ = conf
 
 fPlot :: [Flag] -> Maybe FilePath
-fPlot ((FPlot f):_) = Just f
+fPlot (FPlot f:_) = Just f
 fPlot (_:fs) = fPlot fs
 fPlot [] = Nothing
-

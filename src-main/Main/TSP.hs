@@ -23,6 +23,12 @@ getTSPfile _ _ = error $ usageInfo header options
 saConfig :: SA.Config
 saConfig = SA.Config 300000 0.99 10 7 10
 
+printResult :: Size -> Path -> IO ()
+printResult n minPath = do
+  print (fst minPath)
+  mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
+  putStrLn ""
+
 tspSA :: [Flag] -> [String] -> IO ()
 tspSA opts args = do
   (n, distf) <- readProblemFunction $ getTSPfile opts args
@@ -35,25 +41,21 @@ tspSA opts args = do
   case fPlot opts of
     Nothing -> return ()
     Just file -> plotScore file (info conf) $ map ((read :: String -> Double) . head . words) inf
-  let minPath = case FTwoOpt `elem` opts of
-        True -> let twoO = TSP.TwoOpt.optimize distf $ snd minPath1 in
+  let minPath = if FTwoOpt `elem` opts 
+        then let twoO = TSP.TwoOpt.optimize distf $ snd minPath1 in
                           (sum $ zipWith (curry distf) twoO (tail twoO), twoO)
-        False -> minPath1
-  putStrLn $ show (fst minPath)
-  mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
-  putStrLn ""
+        else minPath1
+  printResult n minPath
 
 tspNN :: [Flag] -> [String] -> IO ()
 tspNN opts args = do
   (n, dist) <- readProblemFunction $ getTSPfile opts args
   let path = TSP.NN.optimize dist n
-  let minPath = case FTwoOpt `elem` opts of
-        True -> let twoO = TSP.TwoOpt.optimize dist $ snd path in
+  let minPath = if FTwoOpt `elem` opts
+        then let twoO = TSP.TwoOpt.optimize dist $ snd path in
                           (sum $ zipWith (curry dist) twoO (tail twoO), twoO)
-        False -> path
-  putStrLn $ show (fst minPath)
-  mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
-  putStrLn ""
+        else path
+  printResult n minPath
 
 tspACO :: [Flag] -> [String] -> IO ()
 tspACO opts args = do
@@ -63,6 +65,4 @@ tspACO opts args = do
   case fPlot opts of
     Nothing -> return ()
     Just file -> plotScore file 1 inf
-  putStrLn $ show (fst minPath)
-  mapM_ (putStr . (++ " ") . show . subtract 1) . tail $ snd minPath
-  putStrLn ""
+  printResult n minPath
