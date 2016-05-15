@@ -23,10 +23,10 @@ getTSPfile _ _ = error $ usageInfo header options
 saConfig :: SA.Config
 saConfig = SA.Config 300000 0.99 10 7 10
 
-printResult :: Size -> Path -> IO ()
-printResult n minPath = do
+printResult :: (Distance, Path) -> IO ()
+printResult minPath = do
   print (fst minPath)
-  mapM_ (putStr . (++ " ") . show . subtract 1) . take n $ snd minPath
+  mapM_ (putStr . (++ " ") . show . subtract 1) . tail $ snd minPath
   putStrLn ""
 
 tspSA :: [Flag] -> [String] -> IO ()
@@ -45,7 +45,7 @@ tspSA opts args = do
         then let twoO = TSP.TwoOpt.optimize distf $ snd minPath1 in
                           (sum $ zipWith (curry distf) twoO (tail twoO), twoO)
         else minPath1
-  printResult n minPath
+  printResult minPath
 
 tspNN :: [Flag] -> [String] -> IO ()
 tspNN opts args = do
@@ -55,7 +55,7 @@ tspNN opts args = do
         then let twoO = TSP.TwoOpt.optimize dist $ snd path in
                           (sum $ zipWith (curry dist) twoO (tail twoO), twoO)
         else path
-  printResult n minPath
+  printResult minPath
 
 tspACO :: [Flag] -> [String] -> IO ()
 tspACO opts args = do
@@ -65,4 +65,4 @@ tspACO opts args = do
   case fPlot opts of
     Nothing -> return ()
     Just file -> plotScore file 1 inf
-  printResult n minPath
+  printResult minPath
