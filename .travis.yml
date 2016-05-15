@@ -3,13 +3,15 @@ language: haskell
 env:
   - GHCVER=7.6.3 CABALVER=1.18
   - GHCVER=7.8.4 CABALVER=1.20
-  - GHCVER=7.10.1 CABALVER=1.22
+  - GHCVER=7.10.3 CABALVER=1.22
+  - GHCVER=8.0.1 CABALVER=1.24
   - GHCVER=head CABALVER=head
 
 matrix:
   allow_failures:
     - env: GHCVER=7.6.3 CABALVER=1.18
-    - env: GHCVER=7.10.1 CABALVER=1.22
+    - env: GHCVER=7.10.3 CABALVER=1.22
+    - env: GHCVER=8.0.1 CABALVER=1.24
     - env: GHCVER=head CABALVER=head
 
 before_install:
