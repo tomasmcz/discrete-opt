@@ -5,8 +5,9 @@ import System.Console.GetOpt
 import ACO (Config(..))
 import SA (Config(..))
 import BB (Config(..))
+import TSP (Config(..), DistConf(..))
 
-data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts | FEst Double
+data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts | FEst Double | FREuc
   deriving (Eq)
 
 options :: [OptDescr Flag]
@@ -21,6 +22,7 @@ options =
   , Option ['p'] ["plot"] (ReqArg FPlot "FILE") "plot score"
   , Option [] ["fin"] (ReqArg (FFin . read) "D") "final temperature for SA"
   , Option [] ["est"] (ReqArg (FEst . read) "D") "initial estimate for BB"
+  , Option [] ["reuc"] (NoArg FREuc) "round Euclidean distance to nearest integer"
   , Option [] ["list-options"] (NoArg FOpts) "list options"
   ]
 
@@ -34,6 +36,10 @@ listOpts = mapM_ (\(Option _ [o] _ _) -> putStrLn $ "--" ++ o)
 
 header :: String
 header = "Usage: discrete-opt <tsp|vrp> <aco|sa|nn> FILE [OPTION...]"
+
+modConfigTSP :: TSP.Config -> Flag -> TSP.Config
+modConfigTSP conf FREuc = conf {distanceC = Euc2DRounded}
+modConfigTSP conf _ = conf
 
 modConfigACO :: ACO.Config -> Flag -> ACO.Config
 modConfigACO conf (FGen g) = conf {paramNGen = g}

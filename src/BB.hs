@@ -18,7 +18,8 @@ module BB
   --, optimizeWithInfo
   ) where
 
-import TSP
+import TSP hiding (Config, defConfig)
+import qualified TSP.NN
 
 import Control.Monad.LPMonad
 import Data.LinearProgram
@@ -127,7 +128,7 @@ optAll solver cycler conds branch = do
         then return (Just solution, conds)
         else optAll solver cycler (conds ++ cycles) branch
 
-optBB :: ([FConstraint] -> [VConstraint] -> IO (Maybe (Double, M.Map String Double), [FConstraint]))
+optBB :: ([FConstraint] -> [VConstraint] -> IO (Maybe Solution, [FConstraint]))
          -> [FConstraint]
          -> [VConstraint]
          -> Double
@@ -173,10 +174,15 @@ optimize dist conf = do
       hPutStrLn stderr $ "ANTS: " ++ show (fst ants)
       return $ fst ants
   -}
-  let (Just best) = initEst conf
+  let n = paramSize conf
+  best <- case initEst conf of
+    Just b -> return b
+    Nothing -> do
+      let (b, _) = TSP.NN.optimize dist n
+      hPutStrLn stderr $ "NN: " ++ show b
+      return b
   --let solver = glpSolveVars simplexDefaults . lp n dist
-      n = paramSize conf
-      solver = (\ c b -> fmap snd . glpSolveVars (SimplexOpts MsgOff 60 True) $ lp n dist c b)
+  let solver = (\ c b -> fmap snd . glpSolveVars (SimplexOpts MsgOff 60 True) $ lp n dist c b)
       cycler = getCycles n . getEdges
   (Just solution, count)  <- optBB (optAll solver cycler) [] [] best 0 0.0 1.0
   hPutStrLn stderr $ "BRANCH COUNT: " ++ show count

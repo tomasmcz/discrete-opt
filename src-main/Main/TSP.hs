@@ -16,10 +16,13 @@ import BB
 import Main.Opts
 import Main.Plot
 
-getTSPfile :: [Flag] -> [String] -> TSPFile
-getTSPfile ((FCoords `elem`) -> True) (file:_) = Euc2DFile file
-getTSPfile _ (file:_) = MatrixFile file
+getTSPfile :: [Flag] -> [String] -> TSP.Config
+getTSPfile ((FCoords `elem`) -> True) (file:_) = TSP.defConfig $ Euc2DFile file
+getTSPfile _ (file:_) = TSP.defConfig $ MatrixFile file
 getTSPfile _ _ = error $ usageInfo header options
+
+getTSPConf :: [Flag] -> [String] -> TSP.Config
+getTSPConf opts args = foldl modConfigTSP (getTSPfile opts args) opts
 
 saConfig :: SA.Config
 saConfig = SA.Config 300000 0.99 10 7 10
@@ -32,7 +35,7 @@ printResult minPath = do
 
 tspSA :: [Flag] -> [String] -> IO ()
 tspSA opts args = do
-  (n, distf) <- readProblemFunction $ getTSPfile opts args
+  (n, distf) <- readProblemFunction $ getTSPConf opts args
   let conf = saConfig
   (minPath1, inf) <- evalRandIO $ SA.optimize
                      conf
@@ -50,7 +53,7 @@ tspSA opts args = do
 
 tspNN :: [Flag] -> [String] -> IO ()
 tspNN opts args = do
-  (n, dist) <- readProblemFunction $ getTSPfile opts args
+  (n, dist) <- readProblemFunction $ getTSPConf opts args
   let path = TSP.NN.optimize dist n
   let minPath = if FTwoOpt `elem` opts
         then let twoO = TSP.TwoOpt.optimize dist $ snd path in
@@ -61,7 +64,7 @@ tspNN opts args = do
 tspACO :: [Flag] -> [String] -> IO ()
 tspACO opts args = do
   let conf n = foldl modConfigACO (ACO.defConfig n) opts
-  (minPath, inf) <- (\ (n, p) -> ACO.optimizeWithInfo (conf n) p) =<< readProblemMatrix (getTSPfile opts args) 
+  (minPath, inf) <- (\ (n, p) -> ACO.optimizeWithInfo (conf n) p) =<< readProblemMatrix (getTSPConf opts args) 
   when (FVerb `elem` opts) $ mapM_ print inf
   case fPlot opts of
     Nothing -> return ()
@@ -70,6 +73,6 @@ tspACO opts args = do
 
 tspBB :: [Flag] -> [String] -> IO ()
 tspBB opts args = do
-  (n, dist) <- readProblemFunction $ getTSPfile opts args
+  (n, dist) <- readProblemFunction $ getTSPConf opts args
   let conf = foldl modConfigBB (BB.defConfig n) opts
   BB.optimize dist conf

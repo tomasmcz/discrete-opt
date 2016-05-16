@@ -32,7 +32,7 @@ import Data.List (foldl')
 --import Data.List.Stream
 --import Prelude hiding (map, minimum, splitAt, sum, repeat, tail, take, zip)
 
-import TSP hiding (CArray)
+import TSP hiding (CArray, Config, defConfig)
 import qualified TSP.TwoOpt as Topt
 
 import Control.Monad.Identity

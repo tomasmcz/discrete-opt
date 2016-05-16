@@ -20,8 +20,12 @@ module TSP
   , CArray
   , DArray
   , FDist
-    -- * Data manipulation
+    -- * Configuration
+  , Config(..)
   , TSPFile(..)
+  , DistConf(..)
+  , defConfig
+    -- * Data manipulation
   , readProblemMatrix
   , readProblemFunction
     -- * Problem specification
@@ -42,23 +46,39 @@ type DArray = UArray (Vertex, Vertex) Distance
 type CArray = UArray Vertex Coordinate
 type FDist = ((Vertex, Vertex) -> Distance)
 type Score = Double
+type DistanceComp = Coordinate -> Coordinate -> Coordinate -> Coordinate -> Distance
 
 data TSPFile = MatrixFile FilePath | Euc2DFile FilePath
+data DistConf = Euc2D | Euc2DRounded
 
-readProblemMatrix :: TSPFile -> IO (Size, DArray)
-readProblemMatrix f@(Euc2DFile _) = (\(n, distf) -> (n, distF2dist n distf)) <$> readProblemFunction f
-readProblemMatrix (MatrixFile filePath) = withFile filePath ReadMode $ \ file -> do
-  n <- read <$> hGetLine file
-  dist <- readMatrix n <$> hGetContents file
-  dist ! (n, n) `seq` return (n, dist)
+data Config = Config
+  { tspfile :: TSPFile
+  , distanceC :: DistConf
+  }
+
+defConfig :: TSPFile -> Config
+defConfig f = Config f Euc2D
+
+readProblemMatrix :: Config -> IO (Size, DArray)
+readProblemMatrix conf = case tspfile conf of
+  (Euc2DFile _) -> (\(n, distf) -> (n, distF2dist n distf)) <$> readProblemFunction conf
+  (MatrixFile filePath) -> withFile filePath ReadMode $ \ file -> do
+    n <- read <$> hGetLine file
+    dist <- readMatrix n <$> hGetContents file
+    dist ! (n, n) `seq` return (n, dist)
     
 
-readProblemFunction :: TSPFile -> IO (Size, FDist)
-readProblemFunction (Euc2DFile filePath) = withFile filePath ReadMode $ \ file -> do
-  n <- read <$> hGetLine file
-  distf <- distC . storeCoords n <$> hGetContents file
-  distf (n, n) `seq` return (n, distf)
-readProblemFunction f@(MatrixFile _) = (\(n, dist) -> (n, (dist !))) <$> readProblemMatrix f
+readProblemFunction :: Config -> IO (Size, FDist)
+readProblemFunction conf = case tspfile conf of
+  (Euc2DFile filePath) -> withFile filePath ReadMode $ \ file -> do
+    n <- read <$> hGetLine file
+    distf <- distC (fsel $ distanceC conf) . storeCoords n <$> hGetContents file
+    distf (n, n) `seq` return (n, distf)
+  (MatrixFile _) -> (\(n, dist) -> (n, (dist !))) <$> readProblemMatrix conf
+
+fsel :: DistConf -> DistanceComp
+fsel Euc2D = euc2
+fsel Euc2DRounded =rEuc2
 
 storeCoords :: Size -> String -> (CArray, CArray)
 storeCoords n s = (listArray (1, n) $ map fst lst, listArray (1, n) $ map snd lst)
@@ -67,11 +87,14 @@ storeCoords n s = (listArray (1, n) $ map fst lst, listArray (1, n) $ map snd ls
     lst2 [a, b] = (a, b)
     lst2 _ = error "error while reading coordinates"
 
-distC :: (CArray, CArray) -> (Vertex, Vertex) -> Distance
-distC (s, d) (a, b) = euc2 (s ! a) (d ! a) (s ! b) (d ! b)
+distC :: DistanceComp -> (CArray, CArray) -> (Vertex, Vertex) -> Distance
+distC dc (s, d) (a, b) = dc (s ! a) (d ! a) (s ! b) (d ! b)
 
-euc2 :: Coordinate -> Coordinate -> Coordinate -> Coordinate -> Distance
+euc2 :: DistanceComp
 euc2 x1 y1 x2 y2 = sqrt ((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+rEuc2 :: DistanceComp
+rEuc2 x1 y1 x2 y2 = fromIntegral . round $ sqrt ((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 readMatrix :: Int -> String -> DArray
 readMatrix n = listArray ((1,1), (n,n)) . map read . words 
