@@ -1,3 +1,5 @@
+{-# LANGUAGE PartialTypeSignatures #-}
+
 {- |
 Copyright    : 2014 Tomáš Musil
 License      : BSD-3
@@ -60,9 +62,10 @@ str2vv s = (p, d)
 vv2str :: Vertex -> Vertex -> String
 vv2str a b = "e_" ++ show (min a b) ++ "_" ++ show (max a b)
 
--- ? getEdges :: Maybe (_, a) -> [String]
+getEdges :: Maybe (_, M.Map String Double) -> [(String, Double)]
 getEdges (Just (_, e)) = M.toList . M.filter (> 0.00001) $ e
 
+getCycles :: Size -> [(String, Double)] -> [(LinFunc String Double, Double)]
 getCycles n edges = if bigCycle cycles then [] else map cond (cycles ++ islandPaths) ++
   (if null cycles && null islandPaths then map combCond combs else [])
     where
@@ -101,6 +104,11 @@ takeMaxOdd (l:ls) = l : tMO ls
   where tMO (s:ss:sss) = s : ss : tMO sss
         tMO _ = []
 
+optAll :: _ => (([(_, _)], _) -> IO (_, Maybe _))
+          -> (Maybe _ -> [(_,_)])
+          -> [(_, _)]
+          -> _
+          -> IO (Maybe _, [(_,_)])
 optAll solver cycler conds branch = do
   (_, solution) <- solver (conds, branch)
   case solution of
@@ -111,6 +119,14 @@ optAll solver cycler conds branch = do
         then return (solution, conds)
         else optAll solver cycler (conds ++ cycles) branch
 
+optBB :: ([_] -> [(String, Double)] -> IO (Maybe (Double, M.Map String Double), [_]))
+         -> [_]
+         -> [(String, Double)]
+         -> Double
+         -> Integer
+         -> Double
+         -> Double
+         -> IO (Maybe (Double, M.Map String Double), Integer)
 optBB estimator conds branch best c p1 p2 = do
   (solution, cycles) <- estimator conds branch
   case solution of
@@ -136,6 +152,7 @@ optBB estimator conds branch best c p1 p2 = do
               (sol2, e) <- optBB estimator cycles ((edge, 1.0):branch) (min best $ solVal sol1) d (p1 + p2 / 2) (p2 / 2)
               return (if solVal sol1 < solVal sol2 then sol1 else sol2, e)
 
+solVal :: _ => Maybe (_, _) -> _
 solVal (Just (v, _)) = v
 solVal _ = 9999999999999
 
