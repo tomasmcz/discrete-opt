@@ -21,7 +21,6 @@ module ACO
   , optimizeWithInfo
   ) where
 
-import Control.Applicative
 import Control.Arrow ((&&&))
 import Control.Monad.State
 import Control.Monad.Random

@@ -22,16 +22,12 @@ import TSP
 
 import Control.Monad.LPMonad
 import Data.LinearProgram
-import Data.LinearProgram.GLPK
 import Data.Array.Unboxed
-import Data.Maybe
 import Data.Tuple
-import Data.Graph
+import Data.Graph hiding (edges, Vertex)
 import Data.Tree
 import Data.List
 import qualified Data.Map as M
-import System.Environment
-import qualified ACO as Ants
 import System.IO
 
 data Config = Config 
@@ -55,13 +51,16 @@ lp n dist (addit, branch) = execLPM $ do
   mapM_ (uncurry geqTo) addit
   mapM_ (uncurry varEq) branch
 
+str2vv :: String -> (Vertex, Vertex)
 str2vv s = (p, d)
   where st = drop 2 s
         p = read $ takeWhile (/= '_') st :: Int
         d = read $ drop 1 $ dropWhile (/= '_') st :: Int
 
+vv2str :: Vertex -> Vertex -> String
 vv2str a b = "e_" ++ show (min a b) ++ "_" ++ show (max a b)
 
+-- ? getEdges :: Maybe (_, a) -> [String]
 getEdges (Just (_, e)) = M.toList . M.filter (> 0.00001) $ e
 
 getCycles n edges = if bigCycle cycles then [] else map cond (cycles ++ islandPaths) ++
@@ -88,7 +87,7 @@ getCycles n edges = if bigCycle cycles then [] else map cond (cycles ++ islandPa
                    , fromIntegral ((length l - 1) * 3 + 1) :: Double)
       bigCycle [a] = length a == n
       bigCycle _ = False
-      isNotLOne [a] = False
+      isNotLOne [_] = False
       isNotLOne _ = True
       comb rc = rc : takeMaxOdd (tooths rc)
       tooths rc = [ [p, otherEnd p] | p <- rc, (dg ! p) > 0, otherEnd p `notElem` rc
@@ -97,10 +96,10 @@ getCycles n edges = if bigCycle cycles then [] else map cond (cycles ++ islandPa
       combs = filter ((>= 4) . length) . map comb $ redCmps
        
 
+takeMaxOdd :: [a] -> [a]
 takeMaxOdd (l:ls) = l : tMO ls
   where tMO (s:ss:sss) = s : ss : tMO sss
         tMO _ = []
-
 
 optAll solver cycler conds branch = do
   (_, solution) <- solver (conds, branch)

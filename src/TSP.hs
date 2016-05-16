@@ -29,7 +29,6 @@ module TSP
   , score
   ) where
 
-import Control.Applicative
 import Control.Monad.Random
 import Data.Array.Unboxed
 import System.IO
