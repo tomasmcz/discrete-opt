@@ -41,6 +41,8 @@ executable discrete-opt
   main-is:             Main.hs
   other-modules:       Main.TSP
                      , Main.VRP
+                     , Main.Opts
+                     , Main.Plot
   -- other-extensions:    
   build-depends:       base >=4.6 && <5
                      , discrete-opt
