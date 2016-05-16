@@ -33,7 +33,7 @@ vrpSA opts (file:_) = do
 vrpACO :: [Flag] -> [String] -> IO ()
 vrpACO opts (file:_) = do
   (n, v, dist, p) <- readProblemM file
-  let conf = (foldl modConfig (defConfig (n - 1)) opts) {penalty = p, originRandom = False, returnToOrigin = v - 1}
+  let conf = (foldl modConfigACO (defConfig (n - 1)) opts) {penalty = p, originRandom = False, returnToOrigin = v - 1}
   (minPath, inf) <- ACO.optimizeWithInfo conf dist
   when (FVerb `elem` opts) $ mapM_ print inf
   case fPlot opts of

@@ -8,13 +8,13 @@ Ant Colony Optimization.
 
 -}
 
-module ACO 
+module ACO
   (
   -- * Types
     Pheromon
   , Coefficient
   -- * Configuration
-  , ConfigACO(..)
+  , Config(..)
   , defConfig
   -- * Optimization
   , optimize
@@ -46,7 +46,7 @@ type CArray = UArray (Vertex, Vertex) Coefficient
 type FPher = ((Vertex, Vertex) -> Pheromon)
 type FCoef = ((Vertex, Vertex) -> Coefficient)
 
-data ConfigACO = ConfigACO 
+data Config = Config 
   { paramSize :: Size          -- ^ size of the graph
   , paramAGen :: Int           -- ^ number of ants in one generation
   , paramNGen :: Int           -- ^ number of generations
@@ -64,11 +64,11 @@ data ConfigACO = ConfigACO
 -- TODO better type for penalty
 -- TODO remove all the HACKs
 
-type ACOm a = ReaderT ConfigACO (Rand StdGen) a
+type ACOm a = ReaderT Config (Rand StdGen) a
 
 -- | Default configuration.
-defConfig :: Size -> ConfigACO
-defConfig n = ConfigACO n
+defConfig :: Size -> Config
+defConfig n = Config n
                       32 
                       500
                       1e16
@@ -84,7 +84,7 @@ defConfig n = ConfigACO n
 lower :: (Monad m) => Reader r a -> ReaderT r m a
 lower = mapReaderT (return . runIdentity) 
 
-newPhrArray :: Reader ConfigACO PArray
+newPhrArray :: Reader Config PArray
 newPhrArray = do
   n <- asks paramSize
   initPh <- asks paramInitPh
@@ -92,7 +92,7 @@ newPhrArray = do
   let b = if r > 0 then 0 else 1 -- HACK
   return . listArray ((b, b), (n, n)) $ repeat initPh
 
-updatePheromones :: Distance -> (Distance, Path) -> PArray -> Reader ConfigACO PArray
+updatePheromones :: Distance -> (Distance, Path) -> PArray -> Reader Config PArray
 updatePheromones minP (ln, bp) phrmn = do
   evRate <- asks paramEvRate
   n <- asks paramSize
@@ -110,7 +110,7 @@ updatePheromones minP (ln, bp) phrmn = do
       phMin = phMax * pBestCoef
   return . bound . update $ evap phrmn
 
-coefs :: ConfigACO -> Size -> FDist -> FPher -> FCoef
+coefs :: Config -> Size -> FDist -> FPher -> FCoef
 coefs conf n fDist fPher = (coefArr !) 
   where
     b = if returnToOrigin conf > 0 then 0 else 1 -- HACK
@@ -186,12 +186,12 @@ generations dist = do
 use2opt :: FDist -> (Distance, Path) -> (Distance, Path)
 use2opt dist (_, path) = let newPath = Topt.optimize dist path in (pathLen dist newPath, newPath)
 
-optimize :: ConfigACO -> DArray -> IO (Distance, Path)
+optimize :: Config -> DArray -> IO (Distance, Path)
 optimize config dist = do
   gens <- evalRandIO $ runReaderT (generations dist) config
   return . minimum . take (paramNGen config) $ gens
 
-optimizeWithInfo :: ConfigACO -> DArray -> IO ((Distance, Path), [Distance])
+optimizeWithInfo :: Config -> DArray -> IO ((Distance, Path), [Distance])
 optimizeWithInfo config dist = do
   gens <- evalRandIO $ runReaderT (generations dist) config
   let res = take (paramNGen config) gens

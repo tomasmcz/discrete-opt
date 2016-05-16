@@ -11,6 +11,7 @@ import SA
 import TSP
 import TSP.NN
 import qualified TSP.TwoOpt
+import BB
 
 import Main.Opts
 import Main.Plot
@@ -59,10 +60,16 @@ tspNN opts args = do
 
 tspACO :: [Flag] -> [String] -> IO ()
 tspACO opts args = do
-  let conf n = foldl modConfig (defConfig n) opts
+  let conf n = foldl modConfigACO (ACO.defConfig n) opts
   (minPath, inf) <- (\ (n, p) -> ACO.optimizeWithInfo (conf n) p) =<< readProblemMatrix (getTSPfile opts args) 
   when (FVerb `elem` opts) $ mapM_ print inf
   case fPlot opts of
     Nothing -> return ()
     Just file -> plotScore file 1 inf
   printResult minPath
+
+tspBB :: [Flag] -> [String] -> IO ()
+tspBB opts args = do
+  (n, dist) <- readProblemFunction $ getTSPfile opts args
+  let conf = foldl modConfigBB (BB.defConfig n) opts
+  BB.optimize dist conf

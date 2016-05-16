@@ -2,10 +2,11 @@ module Main.Opts where
 
 import System.Console.GetOpt
 
-import ACO (ConfigACO(..))
+import ACO (Config(..))
 import SA (Config(..))
+import BB (Config(..))
 
-data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts
+data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts | FEst Double
   deriving (Eq)
 
 options :: [OptDescr Flag]
@@ -19,6 +20,7 @@ options =
   , Option [] ["verb"] (NoArg FVerb) "verbose"
   , Option ['p'] ["plot"] (ReqArg FPlot "FILE") "plot score"
   , Option [] ["fin"] (ReqArg (FFin . read) "D") "final temperature for SA"
+  , Option [] ["est"] (ReqArg (FEst . read) "D") "initial estimate for BB"
   , Option [] ["list-options"] (NoArg FOpts) "list options"
   ]
 
@@ -33,15 +35,19 @@ listOpts = mapM_ (\(Option _ [o] _ _) -> putStrLn $ "--" ++ o)
 header :: String
 header = "Usage: discrete-opt <tsp|vrp> <aco|sa|nn> FILE [OPTION...]"
 
-modConfig :: ConfigACO -> Flag -> ConfigACO
-modConfig conf (FGen g) = conf {paramNGen = g}
-modConfig conf (FAnts a) = conf {paramAGen = a}
-modConfig conf FTwoOpt = conf {paramUse2Opt = True}
-modConfig conf _ = conf
+modConfigACO :: ACO.Config -> Flag -> ACO.Config
+modConfigACO conf (FGen g) = conf {paramNGen = g}
+modConfigACO conf (FAnts a) = conf {paramAGen = a}
+modConfigACO conf FTwoOpt = conf {paramUse2Opt = True}
+modConfigACO conf _ = conf
 
 modConfigSA :: SA.Config -> Flag -> SA.Config
 modConfigSA conf (FFin t) = conf {finalTemp = t}
 modConfigSA conf _ = conf
+
+modConfigBB :: BB.Config -> Flag -> BB.Config
+modConfigBB conf (FEst e) = conf {initEst = Just e}
+modConfigBB conf _ = conf
 
 fPlot :: [Flag] -> Maybe FilePath
 fPlot (FPlot f:_) = Just f
