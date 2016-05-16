@@ -1,5 +1,3 @@
-{-# LANGUAGE PartialTypeSignatures #-}
-
 {- |
 Copyright    : 2014 Tomáš Musil
 License      : BSD-3
@@ -32,6 +30,12 @@ import Data.List
 import qualified Data.Map as M
 import System.IO
 
+type Objective = LinFunc String Double
+type FConstraint = (LinFunc String Double, Double)
+type Variable = String
+type VConstraint = (Variable, Double)
+type Solution = (Score, M.Map Variable Double)
+
 data Config = Config 
   { paramSize :: Size          -- ^ size of the graph
   , initEst :: Maybe Double    -- ^ initial estimate
@@ -41,11 +45,15 @@ data Config = Config
 defConfig :: Size -> Config
 defConfig n = Config n Nothing
 
-objFun :: Size -> FDist ->  LinFunc String Double
+objFun :: Size -> FDist -> Objective
 objFun n dist = linCombination [(dist (a, b), "e_" ++ show a ++ "_" ++ show b) | a <- [1..n], b <- [a+1..n]]
 
-lp :: Size -> FDist -> ([(LinFunc String Double, Double)], [(String, Double)]) -> LP String Double
-lp n dist (addit, branch) = execLPM $ do
+lp :: Size
+      -> FDist
+      -> [FConstraint]
+      -> [VConstraint]
+      -> LP String Double
+lp n dist addit branch = execLPM $ do
   setDirection Min
   setObjective (objFun n dist)
   mapM_ (\ lst -> equalTo (varSum lst) 2) [[vv2str a b | b <- [1..n], a /= b] | a <- [1..n]]
@@ -62,8 +70,8 @@ str2vv s = (p, d)
 vv2str :: Vertex -> Vertex -> String
 vv2str a b = "e_" ++ show (min a b) ++ "_" ++ show (max a b)
 
-getEdges :: Maybe (_, M.Map String Double) -> [(String, Double)]
-getEdges (Just (_, e)) = M.toList . M.filter (> 0.00001) $ e
+getEdges :: Solution -> [VConstraint]
+getEdges (_, e) = M.toList . M.filter (> 0.00001) $ e
 
 getCycles :: Size -> [(String, Double)] -> [(LinFunc String Double, Double)]
 getCycles n edges = if bigCycle cycles then [] else map cond (cycles ++ islandPaths) ++
@@ -104,35 +112,35 @@ takeMaxOdd (l:ls) = l : tMO ls
   where tMO (s:ss:sss) = s : ss : tMO sss
         tMO _ = []
 
-optAll :: _ => (([(_, _)], _) -> IO (_, Maybe _))
-          -> (Maybe _ -> [(_,_)])
-          -> [(_, _)]
-          -> _
-          -> IO (Maybe _, [(_,_)])
+optAll :: ([FConstraint] -> [VConstraint] -> IO (Maybe Solution))
+          -> (Solution -> [FConstraint])
+          -> [FConstraint]
+          -> [VConstraint]
+          -> IO (Maybe Solution, [FConstraint])
 optAll solver cycler conds branch = do
-  (_, solution) <- solver (conds, branch)
-  case solution of
+  mSolution <- solver conds branch
+  case mSolution of
     Nothing -> return (Nothing, [])
-    Just _ -> do
+    Just solution -> do
       let cycles = filter (`notElem` conds) $ cycler solution
       if null cycles
-        then return (solution, conds)
+        then return (Just solution, conds)
         else optAll solver cycler (conds ++ cycles) branch
 
-optBB :: ([_] -> [(String, Double)] -> IO (Maybe (Double, M.Map String Double), [_]))
-         -> [_]
-         -> [(String, Double)]
+optBB :: ([FConstraint] -> [VConstraint] -> IO (Maybe (Double, M.Map String Double), [FConstraint]))
+         -> [FConstraint]
+         -> [VConstraint]
          -> Double
          -> Integer
          -> Double
          -> Double
-         -> IO (Maybe (Double, M.Map String Double), Integer)
+         -> IO (Maybe Solution, Integer)
 optBB estimator conds branch best c p1 p2 = do
-  (solution, cycles) <- estimator conds branch
-  case solution of
+  (mSolution, cycles) <- estimator conds branch
+  case mSolution of
     Nothing -> return (Nothing, c)
-    Just _ ->
-      if solVal solution > best + 0.001
+    Just solution ->
+      if fst solution > best + 0.001
         then do
           hPutStrLn stderr $ "CURRENT BEST: " ++ show best
           hPutStrLn stderr $ "ESTIMATED COMPLETION: " ++ show ((p1 + p2) * 100)
@@ -142,19 +150,19 @@ optBB estimator conds branch best c p1 p2 = do
           if null edges
             then do
               hPutStrLn stderr ""
-              hPutStrLn stderr $ "NEW BEST: " ++ show (min best $ solVal solution)
+              hPutStrLn stderr $ "NEW BEST: " ++ show (min best $ fst solution)
               hPutStrLn stderr $ "ESTIMATED COMPLETION: " ++ show ((p1 + p2) * 100)
               hPutStrLn stderr ""
-              return (solution, c)
+              return (Just solution, c)
             else do
               let edge = fst . minimumBy (\x y -> compare (abs(0.5 - snd x)) (abs (0.5 - snd y))) $ edges
               (sol1, d) <- optBB estimator cycles ((edge, 0.0):branch) best (c + 1) p1 (p2 / 2)
               (sol2, e) <- optBB estimator cycles ((edge, 1.0):branch) (min best $ solVal sol1) d (p1 + p2 / 2) (p2 / 2)
               return (if solVal sol1 < solVal sol2 then sol1 else sol2, e)
 
-solVal :: _ => Maybe (_, _) -> _
+solVal :: Maybe Solution -> Score
 solVal (Just (v, _)) = v
-solVal _ = 9999999999999
+solVal _ = read "Infinity"
 
 optimize :: FDist -> Config -> IO ()
 optimize dist conf = do
@@ -168,9 +176,9 @@ optimize dist conf = do
   let (Just best) = initEst conf
   --let solver = glpSolveVars simplexDefaults . lp n dist
       n = paramSize conf
-      solver = glpSolveVars (SimplexOpts MsgOff 60 True) . lp n dist
+      solver = (\ c b -> fmap snd . glpSolveVars (SimplexOpts MsgOff 60 True) $ lp n dist c b)
       cycler = getCycles n . getEdges
-  (solution, count)  <- optBB (optAll solver cycler) [] [] best 0 0.0 1.0
+  (Just solution, count)  <- optBB (optAll solver cycler) [] [] best 0 0.0 1.0
   hPutStrLn stderr $ "BRANCH COUNT: " ++ show count
   putStrLn ""
   putStrLn "--EDGES"
