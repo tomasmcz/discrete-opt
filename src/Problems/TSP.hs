@@ -8,7 +8,7 @@ Traveling Salesman Problem.
 
 -}
 
-module TSP 
+module Problems.TSP 
   ( -- * Types
     Size
   , Vertex

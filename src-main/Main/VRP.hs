@@ -7,7 +7,7 @@ import qualified Data.Map as M
 
 import ACO
 import SA
-import VRP
+import Problems.VRP
 import Main.Opts
 import Main.Plot
 

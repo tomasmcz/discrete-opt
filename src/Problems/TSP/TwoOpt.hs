@@ -8,9 +8,9 @@ This module implements the 2-opt heuristic for TSP.
 
 -}
 
-module TSP.TwoOpt (optimize) where
+module Problems.TSP.TwoOpt (optimize) where
 
-import TSP
+import Problems.TSP
 
 type Pair = Int
 

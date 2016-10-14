@@ -18,8 +18,8 @@ module BB
   --, optimizeWithInfo
   ) where
 
-import TSP hiding (Config, defConfig)
-import qualified TSP.NN
+import Problems.TSP as TSP hiding (Config, defConfig)
+import qualified Problems.TSP.NN as TSP.NN
 
 import Control.Monad.LPMonad
 import Data.LinearProgram
@@ -167,13 +167,6 @@ solVal _ = read "Infinity"
 
 optimize :: FDist -> Config -> IO ()
 optimize dist conf = do
-  {- best <- if length args == 1
-    then return (read . head $ args :: Distance)
-    else do
-      ants <- Ants.optimize n undefined
-      hPutStrLn stderr $ "ANTS: " ++ show (fst ants)
-      return $ fst ants
-  -}
   let n = paramSize conf
   best <- case initEst conf of
     Just b -> return b
@@ -182,7 +175,7 @@ optimize dist conf = do
       hPutStrLn stderr $ "NN: " ++ show b
       return b
   --let solver = glpSolveVars simplexDefaults . lp n dist
-  let solver = (\ c b -> fmap snd . glpSolveVars (SimplexOpts MsgOff 60 True) $ lp n dist c b)
+  let solver c b = fmap snd . glpSolveVars (SimplexOpts MsgOff 60 True) $ lp n dist c b
       cycler = getCycles n . getEdges
   (Just solution, count)  <- optBB (optAll solver cycler) [] [] best 0 0.0 1.0
   hPutStrLn stderr $ "BRANCH COUNT: " ++ show count

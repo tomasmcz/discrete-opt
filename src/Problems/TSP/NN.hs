@@ -8,7 +8,7 @@ Nearest Neighbour heuristic for TSP.
 
 -}
 
-module TSP.NN
+module Problems.TSP.NN
  ( optimize
  ) where
 
@@ -18,8 +18,8 @@ import Control.Arrow
 --TODO zrušit explicitní rekurzi a zkusit znovu
 import qualified Data.Set as Set
 
-import TSP
-import qualified TSP.TwoOpt as Topt
+import Problems.TSP
+import qualified Problems.TSP.TwoOpt as Topt
 
 findPath :: Size -> FDist -> Vertex -> Path
 findPath n dist origin = origin : fp dist origin origin (Set.delete origin (Set.fromAscList [1..n]))
@@ -41,4 +41,3 @@ optimize dist = minimum . allPathlens dist
 
 allPathlens :: FDist -> Int -> [(Distance, Path)]
 allPathlens dist n = map (pathLen dist &&& id) $ allPaths dist n
-

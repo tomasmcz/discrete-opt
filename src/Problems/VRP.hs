@@ -8,7 +8,7 @@ Vehicle Routing Problem.
 
 -}
 
-module VRP
+module Problems.VRP
   ( -- * Types
     Size
   , Vertex

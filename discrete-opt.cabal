@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                discrete-opt
-version:             0.1.0.0
+version:             0.1.0.1
 synopsis:            Discrete optimization.
 description:         Currently contains Ant Colony Optimization and Simulated Annealing.
 license:             BSD3
@@ -18,11 +18,11 @@ cabal-version:       >=1.10
 library
   exposed-modules:     SA
                      , ACO
-                     , TSP
-                     , TSP.NN
-                     , TSP.TwoOpt
-                     , VRP
                      , BB
+                     , Problems.TSP
+                     , Problems.TSP.NN
+                     , Problems.TSP.TwoOpt
+                     , Problems.VRP
   -- other-modules:       
   other-extensions:    TemplateHaskell
   build-depends:       base >=4.6 && <5

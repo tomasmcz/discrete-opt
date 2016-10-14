@@ -8,9 +8,9 @@ import System.Console.GetOpt
 
 import ACO
 import SA
-import TSP
-import TSP.NN
-import qualified TSP.TwoOpt
+import Problems.TSP as TSP
+import Problems.TSP.NN as NN
+import qualified Problems.TSP.TwoOpt as TwoOpt
 import BB
 
 import Main.Opts
@@ -46,7 +46,7 @@ tspSA opts args = do
     Nothing -> return ()
     Just file -> plotScore file (info conf) $ map ((read :: String -> Double) . head . words) inf
   let minPath = if FTwoOpt `elem` opts 
-        then let twoO = TSP.TwoOpt.optimize distf $ snd minPath1 in
+        then let twoO = TwoOpt.optimize distf $ snd minPath1 in
                           (sum $ zipWith (curry distf) twoO (tail twoO), twoO)
         else minPath1
   printResult minPath
@@ -54,9 +54,9 @@ tspSA opts args = do
 tspNN :: [Flag] -> [String] -> IO ()
 tspNN opts args = do
   (n, dist) <- readProblemFunction $ getTSPConf opts args
-  let path = TSP.NN.optimize dist n
+  let path = NN.optimize dist n
   let minPath = if FTwoOpt `elem` opts
-        then let twoO = TSP.TwoOpt.optimize dist $ snd path in
+        then let twoO = TwoOpt.optimize dist $ snd path in
                           (sum $ zipWith (curry dist) twoO (tail twoO), twoO)
         else path
   printResult minPath

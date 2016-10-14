@@ -5,7 +5,7 @@ import System.Console.GetOpt
 import ACO (Config(..))
 import SA (Config(..))
 import BB (Config(..))
-import TSP (Config(..), DistConf(..))
+import Problems.TSP as TSP (Config(..), DistConf(..))
 
 data Flag = FTwoOpt | FVersion | FHelp | FGen Int | FAnts Int | FCoords | FVerb | FPlot FilePath | FFin Double | FOpts | FEst Double | FREuc
   deriving (Eq)
