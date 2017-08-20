@@ -5,8 +5,7 @@ packages:
   - '.'
 
 extra-deps:
-  - glpk-hs-0.3.5
-#  - glpk-hs-0.5
-#  - gasp-1.0.1.0
+  - glpk-hs-0.5
+  - gasp-1.0.1.0
 
 resolver: lts-6.35

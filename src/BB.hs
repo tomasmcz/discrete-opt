@@ -22,7 +22,7 @@ import Problems.TSP as TSP hiding (Config, defConfig)
 import qualified Problems.TSP.NN as TSP.NN
 
 import Control.Monad.LPMonad
-import Data.LinearProgram
+import Data.LinearProgram hiding ((+), (-), (*), (/))
 import Data.Array.Unboxed
 import Data.Tuple
 import Data.Graph hiding (edges, Vertex)
@@ -48,6 +48,8 @@ defConfig n = Config n Nothing
 
 objFun :: Size -> FDist -> Objective
 objFun n dist = linCombination [(dist (a, b), "e_" ++ show a ++ "_" ++ show b) | a <- [1..n], b <- [a+1..n]]
+
+varSum = linCombination . map (\x -> (1, x))
 
 lp :: Size
       -> FDist

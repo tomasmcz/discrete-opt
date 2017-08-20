@@ -4,10 +4,26 @@ extra-package-dbs: []
 packages:
 - '.'
 
+allow-newer: true
+
 extra-deps:
-- glpk-hs-0.3.5
+- glpk-hs-0.5
 - hackage-security-0.5.2.2
 - ed25519-0.0.5.0
+- Chart-1.8.2
+- Chart-diagrams-1.8.2
+- gasp-1.0.1.0
+- SVGFonts-1.6.0.1
+- diagrams-core-1.4
+- diagrams-lib-1.4.1.2
+- diagrams-postscript-1.4
+- diagrams-svg-1.4.1
+- svg-builder-0.1.0.2
+- blaze-svg-0.3.6.1
+- cereal-vector-0.2.0.1
+- diagrams-solve-0.1.1
+- dual-tree-0.2.1
+- statestack-0.2.0.5
 
 #resolver: ghc-8.2.1
 resolver: nightly-2017-08-19
