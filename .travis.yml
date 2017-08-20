@@ -16,6 +16,13 @@ addons:
       - libgmp-dev
       - libglpk-dev
 
+matrix:
+  include:
+    - env: GHC_VERSION=7.10.3 STACK_YAML=stack-6.35.yaml
+    - env: GHC_VERSION=8.0.1  STACK_YAML=stack-7.24.yaml
+    - env: GHC_VERSION=8.0.2  STACK_YAML=stack-9.1.yaml
+#    - env: GHC_VERSION=8.2.1  STACK_YAML=stack.yaml
+
 before_install:
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
@@ -28,4 +35,4 @@ before_install:
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- stack --install-ghc build
+- stack --no-terminal --install-ghc build
