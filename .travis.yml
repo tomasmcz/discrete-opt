@@ -1,33 +1,31 @@
-language: haskell
+# Use new container infrastructure to enable caching
+sudo: false
 
-env:
-  - GHCVER=7.8.4 CABALVER=1.20
-  - GHCVER=7.10.3 CABALVER=1.22
-  - GHCVER=8.0.1 CABALVER=1.24
-  - GHCVER=head CABALVER=head
+# Do not choose a language; we provide our own build tools.
+language: generic
 
-matrix:
-  allow_failures:
-    - env: GHCVER=7.8.4 CABALVER=1.20
-    - env: GHCVER=head CABALVER=head
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.stack
+
+# Ensure necessary system libraries are present
+addons:
+  apt:
+    packages:
+      - libgmp-dev
+      - libglpk-dev
 
 before_install:
- - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
- - travis_retry sudo apt-get update
- - travis_retry sudo apt-get install libblas-dev liblapack-dev libglpk-dev
- - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER
- - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
- - cabal --version
- - ghc --version
+# Download and unpack the stack executable
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
-install:
- - sudo /opt/ghc/$GHCVER/bin/ghc-pkg recache
- - /opt/ghc/$GHCVER/bin/ghc-pkg recache --user
- - cabal update
- - cabal sandbox init
- - cabal install --only-dependencies --enable-tests --enable-benchmarks --max-backjumps=10000 || cabal install --only-dependencies --enable-tests --enable-benchmarks --max-backjumps=10000 --allow-newer
+#install:
+# Build dependencies
+#- stack --no-terminal --install-ghc test --only-dependencies
 
 script:
- - cabal configure
- - cabal build
-# - cabal test
+# Build the package, its tests, and its docs and run the tests
+- stack --install-ghc build
