@@ -14,18 +14,15 @@ http://tomasmcz.github.io/discrete-opt [Not quite complete yet.]
 
 ## Installation
 
-I recommend using Cabal with a sandbox:
-
-    cabal sandbox init
-    cabal install --only-dep
+Last version was tested to work with GHC 9.2.5 and default cabal-install.
 
 You can test the program on a simple problem:    
 
-    cabal run tsp aco data/tsp_51 -- --coords
+    discrete_opt tsp aco data/tsp_51 --coords
 
 To see available command-line options, you can run:
 
-    cabal run -- -h
+    discrete_opt -h
 
 ## License
 

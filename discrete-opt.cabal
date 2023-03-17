@@ -26,8 +26,8 @@ library
   -- other-modules:       
   other-extensions:    TemplateHaskell
   build-depends:       base >=4.6 && <5
-                     , array >=0.5 && <0.6
-                     , containers >=0.5 && <0.6
+                     , array >=0.5
+                     , containers >=0.5
                      , random
                      , MonadRandom
                      , lens
@@ -46,8 +46,8 @@ executable discrete-opt
   -- other-extensions:    
   build-depends:       base >=4.6 && <5
                      , discrete-opt
-                     , array >=0.5 && <0.6
-                     , containers >=0.5 && <0.6
+                     , array >=0.5
+                     , containers >=0.5
                      , random
                      , MonadRandom
                      , lens

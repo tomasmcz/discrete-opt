@@ -143,12 +143,15 @@ pickNext coef unv = do
       norm = foldl' ((. fst) . (+)) 0 list
   r <- (* norm) <$> getRandom
   return . flip evalState (0, list) . fix $ \ loop -> do
-    (s,(p,v):ts) <- get
-    let ns = s + p
-    put (ns, ts)
-    if r <= ns
-      then return v
-      else loop
+    st <- get
+    case st of
+      (_,[]) -> error "probability fail" 
+      (s,(p,v):ts) -> do
+        let ns = s + p
+        put (ns, ts)
+        if r <= ns
+          then return v
+          else loop
 
 allPaths :: Size -> FCoef -> Int -> ACOm [Path]
 allPaths n coef s = execWriterT . flip evalStateT s . fix $ \ loop -> do
